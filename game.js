@@ -17,6 +17,9 @@ const keys ={
 let lastMoveTime = 0;
 const moveDelay = 150;
 
+let lastFrameTime = performance.now();
+
+
 
 
 class GameMap {
@@ -93,11 +96,12 @@ class Player {
 }
 
 class Bomb {
-    constructor(x, y, map) {
+    constructor(x, y, map, owner) {
         this.x = x;
         this.y = y;
         this.active = true;
         this.map = map;
+        this.owner = owner;
 
         setTimeout(() => {
             this.explode();
@@ -111,6 +115,8 @@ class Bomb {
         ctx.beginPath();
         ctx.arc((this.x + 0.5) * tileSize, (this.y + 0.5) * tileSize, tileSize / 3, 0, Math.PI * 2);
         ctx.fill();
+
+
     }
 
     explode() {
@@ -128,11 +134,14 @@ class Bomb {
             const ty = this.y + dir.dy;
             if (tx >= 0 && tx < mapCols && ty >= 0 && ty < mapRows) {
                 this.map.destroyTile(tx, ty);
-                this.active = false;
-
+                explosionTiles.push({x: tx, y: ty, time: Date.now()});
 
             }
         }
+        if (this.owner){
+            this.owner.hasActiveBomb = false;
+        }
+        this.active = false;
     }
 }
 
@@ -151,6 +160,179 @@ class Score {
         ctx.font = "20px Arial";
         ctx.fillText("Score: " + this.value , 10, 25);
     }
+}
+
+class Enemy {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.moveTimer = 0;
+        this.bombCooldown = Math.random() * 2000 + 2000; // 2–4s
+        this.timeSinceLastBomb = 0;
+        this.hasActiveBomb = false;
+
+    }
+
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc((this.x + 0.5) * tileSize, (this.y + 0.5) * tileSize, tileSize / 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    update(deltaTime, map){
+        this.moveTimer += deltaTime;
+
+        //hrozi vybuch v oblasti
+        if (this.isInDanger(explosionTiles)) {
+            this.tryEvade(map, explosionTiles);
+            return; // jen unik v tomhle snimku
+        }
+
+        //normalni nahodny pohyb
+        if (this.moveTimer > 500) {
+            this.moveTimer = 0;
+
+            const directions = [
+                { dx: 0, dy: -1 },
+                { dx: 0, dy: 1 },
+                { dx: -1, dy: 0 },
+                { dx: 1, dy: 0 }
+            ];
+
+            const dir = directions[Math.floor(Math.random() * directions.length)];
+            const newX = this.x + dir.dx;
+            const newY = this.y + dir.dy;
+
+            if (map.isWalkable(newX, newY)){
+                this.x = newX;
+                this.y = newY;
+            }
+        }
+
+        // 3a. Polozi bombu pokud enemy viditelny v radku nebo sloupci
+        if (this.canSeePlayer(player, map)) {
+            const exists = bombs.some(b => b.x === this.x && b.y === this.y);
+            if (!exists) {
+                bombs.push(new Bomb(this.x, this.y, map));
+            }
+        }
+
+        // 3b. Poloz bombu pokud vidis znicitelny blok v radku a sloupci
+        if (this.canSeeDestructibleBlock(map)) {
+            const exists = bombs.some(b => b.x === this.x && b.y === this.y);
+            if (!exists) {
+                bombs.push(new Bomb(this.x, this.y, map));
+                this.tryEvade(map, explosionTiles); // okamžitě uteč
+                return; // přerušit update, aby nestál na bombě
+            }
+        }
+
+
+        // 4. bezne casovane pokladani
+        this.tryDropBomb(deltaTime, map);
+
+    }
+
+    tryDropBomb(deltaTime, map){
+        if (this.hasActiveBomb) {
+
+        }
+
+
+        this.timeSinceLastBomb += deltaTime;
+        if (this.timeSinceLastBomb >= this.bombCooldown) {
+            const exists = bombs.some(b => b.x === this.x && b.y === this.y);
+            if (!exists) {
+                bombs.push(new Bomb(this.x, this.y, map));
+                this.timeSinceLastBomb = 0;
+                this.bombCooldown = Math.random() * 2000 + 2000;
+            }
+        }
+
+    }
+
+    isInDanger(explosions) {
+        return explosions.some(tile => tile.x === this.x && tile.y === this.y);
+    }
+
+    getSafeDirections(map, explosions) {
+        const directions = [
+            { dx: 0, dy: -1 },
+            { dx: 0, dy: 1 },
+            { dx: -1, dy: 0 },
+            { dx: 1, dy: 0 }
+        ];
+        return directions.filter(dir => {
+            const nx = this.x + dir.dx;
+            const ny = this.y + dir.dy;
+            return map.isWalkable(nx, ny) &&
+                !explosions.some(e => e.x === nx && e.y === ny);
+        });
+    }
+
+    tryEvade(map, explosions) {
+        const safeDirs = this.getSafeDirections(map, explosions);
+        if (safeDirs.length > 0) {
+            const move = safeDirs[Math.floor(Math.random() * safeDirs.length)];
+            this.x += move.dx;
+            this.y += move.dy;
+        }
+    }
+
+
+    canSeePlayer(player, map) {
+        if (this.x === player.x) {
+            const y1 = Math.min(this.y, player.y);
+            const y2 = Math.max(this.y, player.y);
+            for (let y = y1 + 1; y < y2; y++) {
+                if (!map.isWalkable(this.x, y)) return false;
+            }
+            return true;
+        }
+        if (this.y === player.y) {
+            const x1 = Math.min(this.x, player.x);
+            const x2 = Math.max(this.x, player.x);
+            for (let x = x1 + 1; x < x2; x++) {
+                if (!map.isWalkable(x, this.y)) return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    canSeeDestructibleBlock(map) {
+        // horizontalne
+        for (let x = this.x - 1; x >= 0; x--) {
+            if (map.data[this.y][x] === 1) break;
+            if (map.data[this.y][x] === 2) return true;
+        }
+        for (let x = this.x + 1; x < mapCols; x++) {
+            if (map.data[this.y][x] === 1) break;
+            if (map.data[this.y][x] === 2) return true;
+        }
+
+        // vertikalne
+        for (let y = this.y - 1; y >= 0; y--) {
+            if (map.data[y][this.x] === 1) break;
+            if (map.data[y][this.x] === 2) return true;
+        }
+        for (let y = this.y + 1; y < mapRows; y++) {
+            if (map.data[y][this.x] === 1) break;
+            if (map.data[y][this.x] === 2) return true;
+        }
+
+        return false;
+    }
+
+
+
+    isHitByExplosion(explosionTiles){
+        return explosionTiles.some(tile => tile.x === this.x && tile.y === this.y)
+    }
+
+
 }
 
 
@@ -180,7 +362,11 @@ const mapData = [
 const gameMap = new GameMap(mapData);
 const player = new Player(1,1, "white")
 let bombs = [];
-const score = new Score();
+let explosionTiles = []; //x,y, time
+let enemies = [new Enemy(5, 5, "blue"), new Enemy(15, 10, "blue")];
+
+const score = new Score(0);
+
 
 
 
@@ -202,14 +388,35 @@ document.addEventListener("keyup", (e) => {
 
 
 //main game loop
-function gameLoop() {
+function gameLoop(currentTime) {
+    const deltaTime = currentTime - lastFrameTime;
+    lastFrameTime = currentTime;
+
     player.update(gameMap);
+    for (const enemy of enemies) {
+        enemy.update(deltaTime, gameMap);
+    }
+    enemies = enemies.filter(e => !e.isHitByExplosion(explosionTiles));
+
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     gameMap.draw();
     player.draw();
+    for (const enemy of enemies) {
+        enemy.draw();
+    }
+
     bombs = bombs.filter(b => b.active);
     for (const b of bombs) b.draw();
+
+    //vykresleni exploze
+    explosionTiles = explosionTiles.filter(tile => Date.now() - tile.time < 300);
+    for (const tile of explosionTiles) {
+        ctx.fillStyle = "orange";
+        ctx.fillRect(tile.x * tileSize, tile.y * tileSize, tileSize, tileSize);
+    }
+
+
 
     score.draw();
     requestAnimationFrame(gameLoop)
@@ -220,4 +427,4 @@ function gameLoop() {
 
 
 // start
-gameLoop();
+requestAnimationFrame(gameLoop);
