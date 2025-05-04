@@ -1,0 +1,16 @@
+- mapa
+- castecne znicitelna
+- moznost polozit bombu, ktera po casovem limitu exploduje
+- - znici nepritele a znicitelne bloky
+- viteztvi -> zniceni vsech nepratel nebo preziti urcity casovy limit, pak nejvyssi skore
+-- tabulka se skore
+- vice urovni kombinoane se zvysenim obtiznosti (kratsi casovy limit, zakernejsi nepratele, dumyslnejsi prostredi)
+
+- mějte tam alespoň 3 levely (úrovně), můžete tam mít zvuky
+
+technologie:technologie:
+Canvas API -> na gragiku
+Timer+setInteval -> casove limity
+localStorage (HTML5 Storage API) -> ukladani skore
+HTML5 audio -> zvukove efekty
+dotykove ovladani
