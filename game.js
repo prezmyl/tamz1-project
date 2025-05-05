@@ -172,6 +172,10 @@ class Enemy {
         this.timeSinceLastBomb = 0;
         this.hasActiveBomb = false;
 
+        this.evading = false;
+        this.evadeTimer = 1500;
+
+
     }
 
     draw() {
@@ -184,14 +188,24 @@ class Enemy {
     update(deltaTime, map) {
         this.moveTimer += deltaTime;
 
-        // 1. Pokud hrozí výbuch – okamžitě uteč a konec update
+        // 0. Pamatuj, jestli stále utika
+        if (this.evading) {
+            this.evadeTimer -= deltaTime;
+            if (this.evadeTimer <= 0) {
+                this.evading = false;
+            } else {
+                return; // nedelj nic jineho behem uteku
+            }
+        }
+
+        // 1. Pokud hrozí vybuch – utikej a konec update
         if (this.isInDanger(explosionTiles)) {
             this.tryEvade(map, explosionTiles);
             return;
         }
 
         // 2. Pokud vidí zničitelný blok a má možnost úniku, položí bombu a uteče
-        if (this.canSeeDestructibleBlock(map) && !this.hasActiveBomb) {
+        if (this.getDestructibleBlockInRange(map) && !this.hasActiveBomb) {
             const exists = bombs.some(b => b.x === this.x && b.y === this.y);
             const safeDirs = this.getSafeDirections(map, explosionTiles);
             if (!exists && safeDirs.length > 0) {
@@ -271,6 +285,9 @@ class Enemy {
             const move = safeDirs[Math.floor(Math.random() * safeDirs.length)];
             this.x += move.dx;
             this.y += move.dy;
+
+            this.evading = true;
+            this.evadeTimer = 1000; // 1 sekunda vyhýbání
         }
     }
 
@@ -294,6 +311,24 @@ class Enemy {
         }
         return false;
     }
+
+    getDestructibleBlockInRange(map) {
+        const dirs = [
+            { dx: 0, dy: -1 },
+            { dx: 0, dy: 1 },
+            { dx: -1, dy: 0 },
+            { dx: 1, dy: 0 }
+        ];
+        for (const dir of dirs) {
+            const tx = this.x + dir.dx;
+            const ty = this.y + dir.dy;
+            if (tx >= 0 && tx < mapCols && ty >= 0 && ty < mapRows) {
+                if (map.data[ty][tx] === 2) return true;
+            }
+        }
+        return false;
+    }
+
 
     canSeeDestructibleBlock(map) {
         // horizontalne
