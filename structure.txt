@@ -1,9 +1,16 @@
 .
 ├── assets
+├── domluvena_predbezna_specifikace.txt
 ├── game.js
 ├── index.html
+├── js
+│   ├── Bomb.js
+│   ├── Enemy.js
+│   ├── GameMap.js
+│   ├── Player.js
+│   └── Score.js
 ├── package.json
 ├── structure.txt
 └── style.css
 
-2 directories, 5 files
+3 directories, 11 files
