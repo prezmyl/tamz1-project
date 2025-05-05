@@ -181,65 +181,58 @@ class Enemy {
         ctx.fill();
     }
 
-    update(deltaTime, map){
+    update(deltaTime, map) {
         this.moveTimer += deltaTime;
 
-        //hrozi vybuch v oblasti
+        // 1. Pokud hrozí výbuch – okamžitě uteč a konec update
         if (this.isInDanger(explosionTiles)) {
             this.tryEvade(map, explosionTiles);
-            return; // jen unik v tomhle snimku
+            return;
         }
 
-        //normalni nahodny pohyb
+        // 2. Pokud vidí zničitelný blok a má možnost úniku, položí bombu a uteče
+        if (this.canSeeDestructibleBlock(map) && !this.hasActiveBomb) {
+            const exists = bombs.some(b => b.x === this.x && b.y === this.y);
+            const safeDirs = this.getSafeDirections(map, explosionTiles);
+            if (!exists && safeDirs.length > 0) {
+                bombs.push(new Bomb(this.x, this.y, map, this));
+                this.hasActiveBomb = true;
+                this.tryEvade(map, explosionTiles);
+                return;
+            }
+        }
+
+        // 3. Položí bombu, pokud vidí hráče a má kam utéct
+        if (this.canSeePlayer(player, map) && !this.hasActiveBomb) {
+            const exists = bombs.some(b => b.x === this.x && b.y === this.y);
+            const safeDirs = this.getSafeDirections(map, explosionTiles);
+            if (!exists && safeDirs.length > 0) {
+                bombs.push(new Bomb(this.x, this.y, map, this));
+                this.hasActiveBomb = true;
+                this.tryEvade(map, explosionTiles);
+                return;
+            }
+        }
+
+        // 4. Náhodný pohyb – ale jen pokud není ohrožen
         if (this.moveTimer > 500) {
             this.moveTimer = 0;
-
-            const directions = [
-                { dx: 0, dy: -1 },
-                { dx: 0, dy: 1 },
-                { dx: -1, dy: 0 },
-                { dx: 1, dy: 0 }
-            ];
-
-            const dir = directions[Math.floor(Math.random() * directions.length)];
-            const newX = this.x + dir.dx;
-            const newY = this.y + dir.dy;
-
-            if (map.isWalkable(newX, newY)){
-                this.x = newX;
-                this.y = newY;
+            const dirs = this.getSafeDirections(map, explosionTiles);
+            if (dirs.length > 0) {
+                const move = dirs[Math.floor(Math.random() * dirs.length)];
+                this.x += move.dx;
+                this.y += move.dy;
             }
         }
 
-        // 3a. Polozi bombu pokud enemy viditelny v radku nebo sloupci
-        if (this.canSeePlayer(player, map)) {
-            const exists = bombs.some(b => b.x === this.x && b.y === this.y);
-            if (!exists) {
-                bombs.push(new Bomb(this.x, this.y, map));
-            }
-        }
-
-        // 3b. Poloz bombu pokud vidis znicitelny blok v radku a sloupci
-        if (this.canSeeDestructibleBlock(map)) {
-            const exists = bombs.some(b => b.x === this.x && b.y === this.y);
-            if (!exists) {
-                bombs.push(new Bomb(this.x, this.y, map));
-                this.tryEvade(map, explosionTiles); // okamžitě uteč
-                return; // přerušit update, aby nestál na bombě
-            }
-        }
-
-
-        // 4. bezne casovane pokladani
-        this.tryDropBomb(deltaTime, map);
 
     }
 
+
     tryDropBomb(deltaTime, map){
         if (this.hasActiveBomb) {
-
+            return;
         }
-
 
         this.timeSinceLastBomb += deltaTime;
         if (this.timeSinceLastBomb >= this.bombCooldown) {
