@@ -1,5 +1,6 @@
+
 export default class Bomb {
-    constructor(x, y, map, owner, explosionTiles) {
+    constructor(x, y, map, owner, explosionTiles, timer) {
         this.x = x;
         this.y = y;
         this.active = true;
@@ -13,7 +14,7 @@ export default class Bomb {
         setTimeout(() => {
             this.explode();
             this.active = false;
-        }, 2000);
+        }, timer);
     }
 
     draw(ctx, tileSize) {
@@ -51,7 +52,7 @@ export default class Bomb {
         this.active = false;
     }
 
-    static place(owner, map, bombs, explosionTiles) {
+    static place(owner, map, bombs, explosionTiles, timer) {
         // 1) zkontrolujeme, zda owner nemá bombu
         if (owner.hasActiveBomb) return;
         // 2) vytvoříme instanci a přihodíme do pole
@@ -60,7 +61,8 @@ export default class Bomb {
             owner.y,
             map,
             owner,
-            explosionTiles
+            explosionTiles,
+            timer
         );
         bombs.push(bomb);
     }

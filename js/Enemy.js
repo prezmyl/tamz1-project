@@ -2,7 +2,7 @@
 import Bomb from './Bomb.js';
 
 export default class Enemy {
-    constructor(x, y, color, map, bombs, explosions, player) {
+    constructor(x, y, color, map, bombs, explosions, player, moveDelay, bombTimer) {
         this.x = x;
         this.y = y;
         this.color = color;
@@ -11,8 +11,11 @@ export default class Enemy {
         this.explosions = explosions;
         this.player = player;
 
+        this.bombTimer = bombTimer;
         this.moveTimer = 0;
-        this.evadeTimer = 0;
+        this.evadeTimer = 1500;
+        this.moveDelay = moveDelay;
+
         this.evading = false;
         this.hasActiveBomb = false;
     }
@@ -36,20 +39,20 @@ export default class Enemy {
 
         // 2) destructible block adjacent? -> place bomb + evade
         if (!this.hasActiveBomb && this._adjacentDestructible()) {
-            Bomb.place(this, this.map, this.bombs, this.explosions);
+            Bomb.place(this, this.map, this.bombs, this.explosions, this.bombTimer);
             this._evade();
             return;
         }
 
         // 3) sees player in straight line? -> place bomb + evade
         if (!this.hasActiveBomb && this._canSeePlayer()) {
-            Bomb.place(this, this.map, this.bombs, this.explosions);
+            Bomb.place(this, this.map, this.bombs, this.explosions, this.bombTimer);
             this._evade();
             return;
         }
 
         // 4) random move every 500ms
-        if (this.moveTimer >= 500) {
+        if (this.moveTimer >= this.moveDelay) {
             this.moveTimer = 0;
             const dirs = this._safeDirections();
             if (dirs.length) {

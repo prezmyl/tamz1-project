@@ -1,8 +1,7 @@
-import Bomb    from './js/Bomb.js';
-import Enemy from "./js/Enemy.js";
-import GameMap from "./js/GameMap.js";
-import Player from "./js/Player.js";
-import Score from "./js/Score.js";
+import LevelManager from './js/LevelManager.js';
+import Bomb         from './js/Bomb.js';
+// (odstraň import GameMap, Player, Enemy, Score, levels)
+
 
 
 // get canvas and its context
@@ -13,6 +12,11 @@ const tileSize = 40;
 const mapCols = 20;
 const mapRows = 15;
 
+
+const LM     = new LevelManager(ctx);
+LM.load(0);  // spustíme Level 1
+
+
 //first iteration -> keyboard input -> then touchscreen
 const keys ={
     ArrowUp: false,
@@ -21,53 +25,26 @@ const keys ={
     ArrowRight: false,
 };
 
-let lastFrameTime = performance.now();
+
 
 
 //================== init ==================
 //zacnu mapou v kodu, pak prejdu na title app pro vytvareni levlu
 // 0 - empty, 1 = wall, 2 - desctructable wall
-const mapData = [
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,2,0,2,0,0,2,0,2,0,0,2,0,2,0,0,0,1],
-    [1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,0,1],
-    [1,2,0,0,2,0,0,2,0,0,2,0,0,2,0,0,2,0,2,1],
-    [1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,0,1],
-    [1,0,0,2,0,0,2,0,0,2,0,0,2,0,0,2,0,0,0,1],
-    [1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1],
-    [1,0,0,0,2,0,0,0,2,0,0,0,2,0,0,0,2,0,0,1],
-    [1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,0,1],
-    [1,2,0,0,2,0,0,2,0,0,2,0,0,2,0,0,2,0,2,1],
-    [1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,0,1],
-    [1,0,0,2,0,0,2,0,0,2,0,0,2,0,0,2,0,0,0,1],
-    [1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-];
-
-const gameMap = new GameMap(
-    mapData,
-    mapCols,    // 20
-    mapRows,    // 15
-    tileSize    // 40
-);
-
-const player = new Player(1,1, "white")
-let bombs = [];
-let explosionTiles = []; //x,y, time
-let enemies = [
-    new Enemy(5,  5,  'blue',  gameMap, bombs, explosionTiles, player),
-    new Enemy(15, 10, 'green', gameMap, bombs, explosionTiles, player),
-];
-
-const score = new Score(0);
 
 
 //listeners
 document.addEventListener("keydown", (e) => {
     if (e.code in keys) keys[e.code] = true;
     if (e.code === "Space" ) {
-        Bomb.place(player, gameMap, bombs, explosionTiles);
+        Bomb.place(
+            LM.player,
+            LM.map,
+            LM.bombs,
+            LM.explosions,
+            LM.bombTimer
+        );
+
     }
 });
 
@@ -78,51 +55,76 @@ document.addEventListener("keyup", (e) => {
 
 
 //main game loop
-function gameLoop(currentTime) {
-    const deltaTime = currentTime - lastFrameTime;
-    lastFrameTime = currentTime;
+// game.js
 
-    player.update(gameMap, keys);
-    for (const enemy of enemies) {
-        enemy.update(deltaTime, gameMap);
-    }
-    for (let i = enemies.length - 1; i >= 0; i--) {
-        if (enemies[i].isHitByExplosion(explosionTiles)) {
-            enemies.splice(i, 1);
+let lastFrameTime = performance.now();
+requestAnimationFrame(gameLoop);
+
+function gameLoop(now) {
+    const dt = now - lastFrameTime;
+    lastFrameTime = now;
+
+    // --- 1) AKTUALIZACE ---
+    // pohyb hráče
+    LM.player.update(LM.map, keys);
+
+    // pohyb nepřátel
+    LM.enemies.forEach(e => e.update(dt));
+
+    // odstranění padlých nepřátel a inkrementace skóre
+    for (let i = LM.enemies.length - 1; i >= 0; i--) {
+        if (LM.enemies[i].isHitByExplosion(LM.explosions)) {
+            LM.enemies.splice(i, 1);
+            LM.score.update(10);
         }
     }
 
+    // přechod na další level, pokud už nejsou nepřátelé
+    if (LM.enemies.length === 0) {
+        LM.next();
+        return;
+    }
 
+    // --- 2) VYKRESLOVÁNÍ ---
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    gameMap.draw(ctx);
-    player.draw(ctx, tileSize);
-    for (const enemy of enemies) {
-        enemy.draw(ctx, tileSize);
-    }
 
-    for (let i = bombs.length - 1; i >= 0; i--) {
-        if (!bombs[i].active) {
-            bombs.splice(i, 1);
+    // mapa
+    LM.map.draw(ctx);
+
+    // hráč
+    LM.player.draw(ctx, LM.map.tileSize);
+
+    // nepřátelé
+    LM.enemies.forEach(e => e.draw(ctx, LM.map.tileSize));
+
+    // bomby (in-place odstranění a vykreslení)
+    for (let i = LM.bombs.length - 1; i >= 0; i--) {
+        if (!LM.bombs[i].active) LM.bombs.splice(i, 1);
+    }
+    LM.bombs.forEach(b => b.draw(ctx, LM.map.tileSize));
+
+    // exploze (in-place odstranění a vykreslení)
+    for (let i = LM.explosions.length - 1; i >= 0; i--) {
+        if (Date.now() - LM.explosions[i].time >= 300) {
+            LM.explosions.splice(i, 1);
         }
     }
-    for (const b of bombs) b.draw(ctx, tileSize);
-
-    //vykresleni exploze
-    for (let i = explosionTiles.length - 1; i >= 0; i--) {
-        if (Date.now() - explosionTiles[i].time >= 300) {
-            explosionTiles.splice(i, 1);
-        }
-    }
-    for (const tile of explosionTiles) {
+    LM.explosions.forEach(tile => {
         ctx.fillStyle = "orange";
-        ctx.fillRect(tile.x * tileSize, tile.y * tileSize, tileSize, tileSize);
-    }
+        ctx.fillRect(
+            tile.x * LM.map.tileSize,
+            tile.y * LM.map.tileSize,
+            LM.map.tileSize,
+            LM.map.tileSize
+        );
+    });
 
-    score.draw(ctx);
+    // skóre
+    LM.score.draw(ctx);
 
-    requestAnimationFrame(gameLoop)
-
+    requestAnimationFrame(gameLoop);
 }
+
 
 
 // start

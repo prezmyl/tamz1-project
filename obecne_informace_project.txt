@@ -1,0 +1,35 @@
+Příklady témat projektů
+Jednoduchá 2D hra (specifikujte hru v popisu, omezení platí pro konkrétní typ hry)
+Jednoduchá 2,5D hra (specifikujte hru v popisu, omezení platí pro konkrétní typ hry)
+Mapová aplikace (specifikujte, co konkrétně plánujete vizualizovat v mapě v popisu)
+Frontend k databázovému systému implementovanému v jiném předmětu (specifikujte, co by mělo být jejím obsahem v popisu)
+Navigátor areálu školy, vyhledávač cest v rámci areálu školy.
+Trasa získaná z GPS, Výškový profil trasy, současný směr, ...
+Planetárium, aplikace zobrazující polohy planet a informace o nich
+Nákupní seznamy, s uložením v localStorage a možností exportu/importu do/z XML nebo JSON (uložení na serveru/do souboru).
+Vlastní mobilní rozhraní k některé AI službě pomocí jejího API (specifikujte v popisu) s lokálním uložením dat
+Šifrovaná Peer-to-peer komunikace mezi více účastníky (výměna klíčů ideálně pomocí QR kódů, šifrování lokálně uložených dat)
+Grafy - Vlastní (!) knihovna pro vykreslování 2D grafů s příklady
+Jednoduchá 3D hra (specifikujte hru v popisu, omezení platí pro konkrétní typ hry, smysl má jen pokud již máte zkušenosti a chcete vyzkoušet 3D herní JS  framework)
+...
+Témata, která v předchozích letech nedopadala dobře a byla proto z výchozího seznamu vyřazena (bude nutné schválení na základě přesné specifikace):
+Počasí, zobrazení aktuálního stavu počasí, možnost zobrazení předpovědi počasí (výběr místa a automatické určení polohy, ne OpenWeatherMap)
+Chat, komunikační program včetně emotikonů (AJAX+SSE/Web sockets).
+Vědecká kalkulačka, kalkulačka s možnosti použití logaritmů, goniometrických funkcí, převodů mezi číselnými soustavami, atd.
+Hry: Sudoku, Hledání min, Tetris, Piškvorky, Bomber, Had, Žabičky, Sokoban, Dáma, atd.
+Akvárium - včetně více druhů ryb a se zvukovými efekty
+Dotazníky v XML/JSON on-line - vyplňování dotazníků, popis struktury dotazníku v XML/JSON, odpovědi mohou být nestrukturované
+Poznámky k odevzdání projektu
+Pro přidělení plného počtu bodů projektu je potřeba využít podle náročnosti projektu alespoň 3-4 následujících součástí:
+
+Pokročilé GUI pomocí Ionic (popř.Onsen UI,  jQuery Mobile, pokud opakujete, nebo jiného frameworku, např. Sencha Touch, React), včetně základního ovládání gesty.
+Komunikace se serverem prostřednictvím AJAX, výměna dat ve formátu JSON
+Využití DOM (Web) Storage (popř. WebSQL/Indexed DB) pro uložení konfigurace, dat, nejlepších výsledků, apod.
+Využití Low-level GUI (Canvas, herní framework)
+Přehrávání multimédií (zvuky, video)
+Geolokace
+Export souborů
+Využití zvláštních funkcí Apache Cordova - kompas, akcelerometr, obraz z kamery, ...
+Příklad: 2D Hra využívající Canvas a herní API, ukládající nejlepší výsledky a stav hry do LocalStorage a nabízející hlavní nabídku s nastavením hry nebo zvukové efekty.
+
+Aplikace bude otestována na skutečném zařízení nebo alespoň v Android emulátoru.
