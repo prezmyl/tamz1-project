@@ -1,14 +1,14 @@
-
-export class Bomb {
-    constructor(x, y, owner, gameState) {
+export default class Bomb {
+    constructor(x, y, map, owner, explosionTiles) {
         this.x = x;
         this.y = y;
         this.active = true;
+        this.map = map;
+        this.mapCols = map.data[0].length;
+        this.mapRows = map.data.length;
         this.owner = owner;
-        this.gameState = gameState;
-        this.map = gameState.map;
-
-
+        this.owner.hasActiveBomb = true;
+        this.explosionTiles = explosionTiles
 
         setTimeout(() => {
             this.explode();
@@ -39,9 +39,9 @@ export class Bomb {
         for (const dir of dirs) {
             const tx = this.x + dir.dx;
             const ty = this.y + dir.dy;
-            if (tx >= 0 && tx < this.map.data.length && ty >= 0 && ty < this.map.data[0].length) {
+            if (tx >= 0 && tx < this.mapCols && ty >= 0 && ty < this.mapRows) {
                 this.map.destroyTile(tx, ty);
-                this.gameState.explosionTiles.push({x: tx, y: ty, time: Date.now()});
+                this.explosionTiles.push({x: tx, y: ty, time: Date.now()});
 
             }
         }
