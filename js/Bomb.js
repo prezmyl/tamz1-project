@@ -50,4 +50,18 @@ export default class Bomb {
         }
         this.active = false;
     }
+
+    static place(owner, map, bombs, explosionTiles) {
+        // 1) zkontrolujeme, zda owner nemá bombu
+        if (owner.hasActiveBomb) return;
+        // 2) vytvoříme instanci a přihodíme do pole
+        const bomb = new Bomb(
+            owner.x,
+            owner.y,
+            map,
+            owner,
+            explosionTiles
+        );
+        bombs.push(bomb);
+    }
 }
