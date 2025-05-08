@@ -64,16 +64,9 @@ export default class Enemy {
     }
 
     draw(ctx, tileSize) {
-        // use the passed-in tileSize, not this.map.tileSize
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(
-            (this.x + 0.5) * tileSize,
-            (this.y + 0.5) * tileSize,
-            tileSize / 3,
-            0,
-            Math.PI * 2
-        );
+        ctx.fillRect(this.x * tileSize, this.y * tileSize, tileSize, tileSize);
         ctx.fill();
     }
 

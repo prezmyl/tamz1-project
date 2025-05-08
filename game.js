@@ -40,6 +40,38 @@ document.addEventListener("keyup", (e) => {
     if (e.code in keys) keys[e.code] = false;
 });
 
+// -------- touch controls --------
+const touchMap = {
+    'btn-up':    'ArrowUp',
+    'btn-down':  'ArrowDown',
+    'btn-left':  'ArrowLeft',
+    'btn-right': 'ArrowRight',
+};
+//pohyb pres touch
+Object.entries(touchMap).forEach(([btnId, keyCode]) => {
+    const btn = document.getElementById(btnId);
+    btn.addEventListener('touchstart', e => {
+        e.preventDefault();
+        keys[keyCode] = true;
+    }, { passive:false });
+    btn.addEventListener('touchend', e => {
+        e.preventDefault();
+        keys[keyCode] = false;
+    }, { passive:false });
+});
+
+// bomba pres touch
+const bombBtn = document.getElementById('btn-bomb');
+bombBtn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    Bomb.place(
+        LM.player,
+        LM.map,
+        LM.bombs,
+        LM.explosions,
+        LM.bombTimer
+    );
+}, { passive:false });
 
 
 //======= main game loop ========
@@ -59,7 +91,7 @@ function gameLoop(now) {
     LM.enemies.forEach(e => e.update(dt));
 
     //kill them
-    LM.enemies.forEach(e => {LM.scheduleEnemyKill(e, 3000)});
+    //LM.enemies.forEach(e => {LM.scheduleEnemyKill(e, 3000)});
 
     // removing dead enemies and changing score
     for (let i = LM.enemies.length - 1; i >= 0; i--) {
