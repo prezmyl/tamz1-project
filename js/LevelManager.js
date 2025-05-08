@@ -11,6 +11,7 @@ export default class LevelManager {
         this.ctx = ctx;
         this.score = new Score(0);
         this.current = 0;
+        this.gameOver = false;
     }
 
     load(levelIndex) {
@@ -29,10 +30,41 @@ export default class LevelManager {
     }
 
     next() {
+
+        console.log("→ gameLoop start, level:", this.current);
         if (this.current + 1 < levels.length) {
+            console.log("→ loading level", this.current+1);
             this.load(this.current + 1);
+            console.log("→ loaded, new current:", this.current);
         } else {
-            // TODO: end-of-game (vítězství) – zobraz menu / highscore
+            // TODO: end-of-game  –> zobraz menu / highscore
+            this.gameOver = true;
+            console.log("→ game over");
+            // 1) save svore
+            Score.saveHighScores({ name: 'Player', value: this.score.value });
+            // 2) Nactu top10
+            const top = Score.loadHighScores();
+            // 3) Vykreslim canvas
+            const ctx = this.ctx;
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Arial';
+            ctx.fillText('🎉 Game Over! 🎉', 50, 50);
+            ctx.fillText('High Scores:', 50, 90);
+            top.forEach((e, i) => {
+                ctx.fillText(`${i+1}. ${e.name}: ${e.value}`, 50, 130 + i * 30);
+            });
+            // 4) Ukonceni smycky <– no more requestAnimationFrame
         }
+    }
+
+    scheduleEnemyKill(enemy, deathTime) {
+        setTimeout(() => {
+            const idx = this.enemies.indexOf(enemy);
+            if (idx !== -1) {
+                this.enemies.splice(idx, 1);
+                this.score.update(10);
+            }
+        }, deathTime);
     }
 }

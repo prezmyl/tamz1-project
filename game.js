@@ -1,21 +1,16 @@
 import LevelManager from './js/LevelManager.js';
 import Bomb         from './js/Bomb.js';
-// (odstraň import GameMap, Player, Enemy, Score, levels)
 
 
-
+// ======== init ========
 // get canvas and its context
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const tileSize = 40;
-const mapCols = 20;
-const mapRows = 15;
-
-
 const LM     = new LevelManager(ctx);
-LM.load(0);  // spustíme Level 1
+LM.load(0);  // level 1 to begin with
 
+let lastFrameTime = performance.now();
 
 //first iteration -> keyboard input -> then touchscreen
 const keys ={
@@ -26,14 +21,7 @@ const keys ={
 };
 
 
-
-
-//================== init ==================
-//zacnu mapou v kodu, pak prejdu na title app pro vytvareni levlu
-// 0 - empty, 1 = wall, 2 - desctructable wall
-
-
-//listeners
+//========== listeners =============
 document.addEventListener("keydown", (e) => {
     if (e.code in keys) keys[e.code] = true;
     if (e.code === "Space" ) {
@@ -54,24 +42,26 @@ document.addEventListener("keyup", (e) => {
 
 
 
-//main game loop
-// game.js
-
-let lastFrameTime = performance.now();
-requestAnimationFrame(gameLoop);
-
+//======= main game loop ========
 function gameLoop(now) {
+    if (LM.gameOver) return; //ukonci smycku pri gameOver flagu
+
+    console.log("→ gameLoop start, level:", LM.current);
+
     const dt = now - lastFrameTime;
     lastFrameTime = now;
 
     // --- 1) AKTUALIZACE ---
-    // pohyb hráče
+    // pohyb player
     LM.player.update(LM.map, keys);
 
-    // pohyb nepřátel
+    // pohyb enemy
     LM.enemies.forEach(e => e.update(dt));
 
-    // odstranění padlých nepřátel a inkrementace skóre
+    //kill them
+    LM.enemies.forEach(e => {LM.scheduleEnemyKill(e, 3000)});
+
+    // removing dead enemies and changing score
     for (let i = LM.enemies.length - 1; i >= 0; i--) {
         if (LM.enemies[i].isHitByExplosion(LM.explosions)) {
             LM.enemies.splice(i, 1);
@@ -79,25 +69,26 @@ function gameLoop(now) {
         }
     }
 
-    // přechod na další level, pokud už nejsou nepřátelé
+    // move to next level, when no more enemies are alive
     if (LM.enemies.length === 0) {
         LM.next();
+        requestAnimationFrame(gameLoop);
         return;
     }
 
-    // --- 2) VYKRESLOVÁNÍ ---
+    // --- 2) VYKRESLEVANI ---
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // mapa
     LM.map.draw(ctx);
 
-    // hráč
+    // hrac
     LM.player.draw(ctx, LM.map.tileSize);
 
-    // nepřátelé
+    // enemies
     LM.enemies.forEach(e => e.draw(ctx, LM.map.tileSize));
 
-    // bomby (in-place odstranění a vykreslení)
+    // bombs (in-place removing explouaded and draw)
     for (let i = LM.bombs.length - 1; i >= 0; i--) {
         if (!LM.bombs[i].active) LM.bombs.splice(i, 1);
     }
@@ -119,13 +110,12 @@ function gameLoop(now) {
         );
     });
 
-    // skóre
+    // score
     LM.score.draw(ctx);
 
     requestAnimationFrame(gameLoop);
 }
 
-
-
-// start
+//start
 requestAnimationFrame(gameLoop);
+

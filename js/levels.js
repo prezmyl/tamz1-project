@@ -20,10 +20,10 @@ export const levels = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         ],
         playerStart: { x:1, y:1 },
-        enemyStarts: [ {x:5,y:5}, {x:15,y:10} ],
+        enemyStarts: [ {x:5,y:5}, {x:18,y:7} ],
         tileSize: 40,
         bombTimer: 2000,      // ms do exploze
-        enemyMoveDelay: 500,  // ms mezi náhodnými kroky
+        enemyMoveDelay: 500,  // ms mezi nahodnymi kroky
     },
     {
         name: "Level 2",
@@ -70,7 +70,7 @@ export const levels = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         ],
         playerStart: { x:1, y:1 },
-        enemyStarts: [ {x:1,y:5}, {x:15,y:10}],
+        enemyStarts: [ {x:1,y:10}, {x:15,y:10}],
         tileSize: 40,
         bombTimer: 1000,
         enemyMoveDelay: 300,
