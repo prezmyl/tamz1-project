@@ -1,6 +1,7 @@
 import LevelManager from './js/LevelManager.js';
 import Bomb         from './js/Bomb.js';
 import Player from "./js/Player.js";
+import Enemy from "./js/Enemy.js";
 
 
 // ======== init ========
@@ -154,7 +155,8 @@ function gameLoop(now) {
 
 playerSheet.onload = () => {
     // ← INJECT the loaded Image into Player class
-    Player.sheet = playerSheet;           // ← ADDED
+    Player.sheet = playerSheet;
+    Enemy.sheet = playerSheet;// ← ADDED
 
     // initialize LevelManager & first level
     LM = new LevelManager(ctx);           // ← CHANGED: instantiate here
