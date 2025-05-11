@@ -8,7 +8,7 @@ body {
 }
 #game-container {
     position: relative;
-    /* ideálně šířka a výška canvasu, nebo max-width:100% pro responsivitu */
+    /* ideálně šířka a výzka canvasu, nebo max-width:100% pro responsivitu */
 }
 canvas {
     display: block;       /* odstraní inline mezery */
@@ -18,9 +18,9 @@ canvas {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    pointer-events: none; /* overlay propustí všechny události kromě těch, kde je vnořené tlačítko */
+    pointer-events: none; /* overlay propusti všechny události kromě těch, kde je vnořené tlačítko */
 }
-/* zajistí, že jen tlačítka chytají dotyk */
+/* zajistí, že jen tlacitka chytaji dotyk */
 #touch-controls button {
     pointer-events: auto;
 }

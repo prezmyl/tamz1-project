@@ -2,15 +2,31 @@
 ├── assets
 ├── domluvena_predbezna_specifikace.txt
 ├── game.js
+├── icons
+│   ├── icon-192.png
+│   └── icon-512.png
 ├── index.html
 ├── js
 │   ├── Bomb.js
 │   ├── Enemy.js
 │   ├── GameMap.js
+│   ├── LevelManager.js
+│   ├── levels.js
 │   ├── Player.js
 │   └── Score.js
+├── manifest.json
+├── node_modules
+│   ├── @babel
+│   ├── @ioredis
+│   ├── @noble
+│   ├── @paralleldrive
+│   ├── @socket.io
+│   └── @types
+├── obecne_informace_project.txt
 ├── package.json
+├── package-lock.json
 ├── structure.txt
-└── style.css
+├── style.css
+└── sw.js
 
-3 directories, 11 files
+11 directories, 19 files

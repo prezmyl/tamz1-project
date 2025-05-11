@@ -1,0 +1,15 @@
+Zpetna vazba kantora
+- soucasny stav je tak na 10 z 30. Potrebuju minimalne 15, optimalne 22
+- pry lepsi bylo pouzit React a nejaky herni framework jako phaser
+- aplikace by se mela prizpusobovat velikosti obrazovky a otoceni telefonu
+- mel bych kreslit textury -> vykreslovat assety(bomba, zed, hrac,..), animece vybuchu
+pry budou problem v tom mem vyvojovem prostredi bez framworku, plus zadne casticove efkety atd
+- dotykove ovladani pres tlacitka neni nejlepsi -> pry lepsi varianta dotykove pole, kde asi smer pohybu nasleduje dotek
+a polozeni bomby by mohle byt asi jinak reseno nebo proste kde se dotknu a tam hrac vyrazi az nejblize kam ho herni scena pusti
+- storage je ted velmi zakladni -> nejak rozsirit
+- export/improt skore do/ze souboru
+- zvuky at tam jsou
+- at je to instalovatelna appka
+
+
+

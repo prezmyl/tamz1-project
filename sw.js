@@ -23,7 +23,7 @@ self.addEventListener('install', e => {
     );
 });
 
-// Aktivace a čištění starých cache
+// Aktivace a cisteni starych cache
 self.addEventListener('activate', e => {
     e.waitUntil(
         caches.keys().then(keys =>
@@ -35,7 +35,7 @@ self.addEventListener('activate', e => {
     );
 });
 
-// Při fetchi se nejdřív pokusíme z cache, pak z networku
+// Pri fetchi se nejdriv pokusime z cache, pak z networku
 self.addEventListener('fetch', e => {
     e.respondWith(
         caches.match(e.request)
