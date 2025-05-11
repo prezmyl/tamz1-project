@@ -11,7 +11,6 @@ const URLS_TO_CACHE = [
     './js/Score.js',
     './js/LevelManager.js',
     './js/levels.js',
-    './js/Score.js',
     './style.css'
 ];
 

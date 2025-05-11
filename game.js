@@ -1,15 +1,19 @@
 import LevelManager from './js/LevelManager.js';
 import Bomb         from './js/Bomb.js';
+import Player from "./js/Player.js";
 
 
 // ======== init ========
 // get canvas and its context
 const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const ctx    = canvas.getContext("2d");
 
-const LM     = new LevelManager(ctx);
-LM.load(0);  // level 1 to begin with
 
+//animation sheet -> must be done befor starting gameloop
+const playerSheet = new Image();
+playerSheet.src   = 'assets/Atomic_Bomberman_Green.png';
+
+let LM;
 let lastFrameTime = performance.now();
 
 //first iteration -> keyboard input -> then touchscreen
@@ -85,7 +89,7 @@ function gameLoop(now) {
 
     // --- 1) AKTUALIZACE ---
     // pohyb player
-    LM.player.update(LM.map, keys);
+    LM.player.update(dt, LM.map, keys);
 
     // pohyb enemy
     LM.enemies.forEach(e => e.update(dt));
@@ -148,6 +152,16 @@ function gameLoop(now) {
     requestAnimationFrame(gameLoop);
 }
 
-//start
-requestAnimationFrame(gameLoop);
+playerSheet.onload = () => {
+    // ← INJECT the loaded Image into Player class
+    Player.sheet = playerSheet;           // ← ADDED
+
+    // initialize LevelManager & first level
+    LM = new LevelManager(ctx);           // ← CHANGED: instantiate here
+    LM.load(0);
+
+    // start timing and game loop
+    lastFrameTime = performance.now();     // ← CHANGED: init timestamp
+    requestAnimationFrame(gameLoop);       // ← CHANGED: kick off loop
+};
 
