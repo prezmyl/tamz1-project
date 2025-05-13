@@ -23,7 +23,7 @@ export default class LevelManager {
         this.enemies = lvl.enemyStarts.map(pos =>
             new Enemy(pos.x, pos.y, 'blue',
                 this.map, this.bombs, this.explosions, this.player,
-                lvl.enemyMoveDelay, lvl.bombTimer)
+                lvl.enemyMoveDelay, lvl.bombTimer, this.map.tileSize)
         );
         this.bombTimer = lvl.bombTimer;
         this.current = levelIndex;

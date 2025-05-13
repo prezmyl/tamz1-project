@@ -154,16 +154,23 @@ function gameLoop(now) {
 }
 
 playerSheet.onload = () => {
-    // ← INJECT the loaded Image into Player class
+    // 1) přiřazení atlasu
     Player.sheet = playerSheet;
-    Enemy.sheet = playerSheet;// ← ADDED
+    Enemy.sheet  = playerSheet;
 
-    // initialize LevelManager & first level
-    LM = new LevelManager(ctx);           // ← CHANGED: instantiate here
+    // 2) inicializace LevelManageru
+    LM = new LevelManager(ctx);
     LM.load(0);
 
-    // start timing and game loop
-    lastFrameTime = performance.now();     // ← CHANGED: init timestamp
-    requestAnimationFrame(gameLoop);       // ← CHANGED: kick off loop
-};
+    // 3) po load() máme LM.map.tileSize → předáme ho hráči i nepřátelům
+    const ts = LM.map.tileSize;
+    LM.player.tileSize = ts;
+    LM.player.x = LM.player.xTile * ts;
+    LM.player.y = LM.player.yTile * ts;
+    // obdobně u enemy, pokud je budete chtít plynule pohybovat,
+    // museli byste jim do konstruktoru přidat tileSize a stejnou logiku.
 
+    // 4) start
+    lastFrameTime = performance.now();
+    requestAnimationFrame(gameLoop);
+};
