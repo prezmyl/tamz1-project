@@ -7,7 +7,7 @@ const TOP_BORDER       = 20;    // pixely nad první řadou buněk
 const GRID_LINE        = 2;     // pixely mezi buňkami
 const FRAME_W          = 110;   // šířka jedné buňky
 const FRAME_H          = 110;   // výška jedné buňky
-const MOVE_SPEED       = 80;    // px/s – základní rychlost pohybu
+const MOVE_SPEED       = 100;    // px/s – základní rychlost pohybu
 const EVADE_SPEED_MULT = 2;     // násobek rychlosti při útěku
 const MOVE_DELAY       = 500;   // ms mezi normálními kroky
 const ANIM_DELAY       = 150;   // ms mezi snímky animace
@@ -124,9 +124,10 @@ export default class Enemy {
         this.moveTimer = 0;
         if (this.moving) return true;
 
-        // 2) fáze podle priority
-        if (this._planEvade())  return true;
-        if (this._planChase())  return true;
+        if (this._planEvade())      return true;
+        if (this._planAttack())     return true;   // pokud nechceme střílet před chase
+        if (this._planIntercept())  return true;   // cut-off pokud jsme dost blízko
+        if (this._planChase())      return true;   // běžný follow-through
         return this._planWander();
     }
 
@@ -293,6 +294,43 @@ export default class Enemy {
 
         return false;
     }
+
+    /**
+     * Pokud jsme dost blízko, snažíme se hráče „přestřihnout“.
+     */
+    _planIntercept() {
+        const px = this.player.xTile, py = this.player.yTile;
+        const start = { x: this.xTile, y: this.yTile };
+        // blokujeme stejné jako při chase
+        const blocking = new Set(this.explosions.map(e=>`${e.x},${e.y}`));
+        for (const b of this.bombs) blocking.add(`${b.x},${b.y}`);
+
+        let bestPath = null, bestScore = -Infinity;
+        // kandidáti: samotná hráčova tile + 4 sousedi
+        const targets = [{ x:px, y:py }];
+        for (const {dx,dy} of DIRECTIONS) {
+            const tx = px+dx, ty = py+dy;
+            if (this.map.isWalkable(tx, ty)) targets.push({ x:tx, y:ty });
+        }
+
+        for (const t of targets) {
+            const path = bfsFindPath(start, t, this.map, blocking);
+            if (!path) continue;
+            const dE = path.length;  // enemy cesta
+            const dP = Math.abs(px - t.x) + Math.abs(py - t.y); // hráč Manhattan
+            const score = dP - dE;
+            if (score > bestScore) {
+                bestScore = score;
+                bestPath = path;
+            }
+        }
+
+        if (!bestPath || bestPath.length < 2) return false;
+        const step = bestPath[1];
+        this._startMoveTo(step.x, step.y, step.dir);
+        return true;
+    }
+
 
     /** Convenience to place a bomb and mark state */
     _placeBomb() {
