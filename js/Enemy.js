@@ -286,7 +286,10 @@ export default class Enemy {
         }
 
         // If direct line of sight to player
-        if (this._canSeePlayer()) {
+        const dist = Math.abs(this.player.xTile - this.xTile)
+            + Math.abs(this.player.yTile - this.yTile);
+        const ATTACK_RANGE = 5; // nastav, jak daleko enemy „cítí“ hráče
+        if (this._canSeePlayer() && dist <= ATTACK_RANGE) {
             this._placeBomb();
             this._evade(this.xTile, this.yTile);
             return true;
