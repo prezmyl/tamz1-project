@@ -136,57 +136,79 @@ export default class Enemy {
     /**
      * Simple evasion: vybere sousední tile nejdále od bomby.
      */
+    /**
+     * Vícekrokové útěkové BFS:
+     * - za cíl bere první dlaždici, jejíž manh.dist od bomby > jejího range
+     * - blokuje jen právě explodující dlaždice (this.explosions)
+     */
     _planEvade() {
         if (!this.evading || !this.lastBombTile) return false;
-        // sběr sousedů bez aktuálních explozi
-        const safeDirs = DIRECTIONS.map(({dir,dx,dy}) => ({
-            dir,
-            nx: this.xTile + dx,
-            ny: this.yTile + dy
-        })).filter(({nx,ny}) =>
-            this.map.isWalkable(nx, ny) &&
-            !this.explosions.some(e => e.x === nx && e.y === ny)
-        );
-        if (!safeDirs.length) return false;
-        // najdi ten, co má největší manhattanský vzdálenost od epicentra
-        let best = safeDirs[0], bestDist = 0;
-        for (const cand of safeDirs) {
-            const d = Math.abs(cand.nx - this.lastBombTile.x)
-                + Math.abs(cand.ny - this.lastBombTile.y);
-            if (d > bestDist) { best = cand; bestDist = d; }
+        // 1) najdi bombu, kterou jsme položili
+        const bomb = this.bombs.find(b => b.x === this.lastBombTile.x && b.y === this.lastBombTile.y);
+        if (!bomb) return false;
+        const range = bomb.range || 1;
+        const start = { x: this.xTile, y: this.yTile };
+        const goalCheck = p =>
+            Math.abs(p.x - bomb.x) + Math.abs(p.y - bomb.y) > range;
+
+        // 2) vytvoř set aktuálních explozí
+        const blocked = new Set(this.explosions.map(e => `${e.x},${e.y}`));
+
+        // 3) BFS fronta
+        const key   = p => `${p.x},${p.y}`;
+        const seen  = new Set([key(start)]);
+        const queue = [[ start ]];  // každá položka je cesta [ {x,y,dir?}, ... ]
+        while (queue.length) {
+            const path = queue.shift();
+            const cur  = path[path.length - 1];
+
+            // 4) pokud jsme mimo blast range, máme cíl!
+            if (goalCheck(cur)) {
+                // první krok z cesty:
+                const next = path[1];
+                this._startMoveTo(next.x, next.y, next.dir);
+                return true;
+            }
+
+            // 5) expand sousedy
+            for (const {dx,dy,dir} of DIRECTIONS) {
+                const nx = cur.x + dx, ny = cur.y + dy;
+                const k  = `${nx},${ny}`;
+                if (seen.has(k))           continue;
+                if (!this.map.isWalkable(nx, ny)) continue;
+                if (blocked.has(k))        continue;
+                seen.add(k);
+                queue.push(path.concat({ x: nx, y: ny, dir }));
+            }
         }
-        this._startMoveTo(best.nx, best.ny, best.dir);
-        return true;
+
+        // žádná cesta k bezpečí
+        return false;
     }
+
+
 
 
     /**
      * BFS-based chase: najde shortest safe path k hráči.
      */
     _planChase() {
-        const danger = this._computeDangerZones();
-        const targetKey = `${this.player.xTile},${this.player.yTile}`;
-        const visited = new Set([`${this.xTile},${this.yTile}`]);
-        const queue   = [ [ { x: this.xTile, y: this.yTile } ] ];
+        // pro nahánění bereme celé predikované nebezpečí
+        const dangerAll = this._computeDangerZones();
+        const blocking = new Set([...dangerAll]);
+        // nechceme vstoupit ani do právě vybuchujících
+        this.explosions.forEach(e => blocking.add(`${e.x},${e.y}`));
 
-        while (queue.length) {
-            const path = queue.shift();
-            const { x, y } = path[path.length - 1];
-            if (`${x},${y}` === targetKey) {
-                if (path.length < 2) return false;
-                const next = path[1];
-                this._startMoveTo(next.x, next.y, next.dir);
-                return true;
-            }
-            for (const {dx,dy,dir} of DIRECTIONS) {
-                const nx = x + dx, ny = y + dy, key = `${nx},${ny}`;
-                if (visited.has(key) || !this.map.isWalkable(nx, ny) || danger.has(key)) continue;
-                visited.add(key);
-                queue.push(path.concat({ x: nx, y: ny, dir }));
-            }
-        }
-        return false;
+        const start  = { x: this.xTile, y: this.yTile };
+        const target = { x: this.player.xTile, y: this.player.yTile };
+        const path = bfsFindPath(start, target, this.map, blocking);
+
+        if (!path || path.length < 2) return false;
+        const next = path[1];
+        this._startMoveTo(next.x, next.y, next.dir);
+        return true;
     }
+
 
     /**
      * Wander: pokud mám preferredDir a straightSteps, pokračuj;
@@ -406,3 +428,32 @@ export default class Enemy {
         }
     }
 }
+
+/**
+ * Najde shortest path z `start` do `target` přes průchozí dlaždice,
+ * vynechává pole v `blockingSet` (Set klíčů "x,y").
+ * Vrací pole bodů [{x,y,dir},…] nebo null.
+ */
+function bfsFindPath(start, target, map, blockingSet) {
+    const key = p => `${p.x},${p.y}`;
+    const visited = new Set([key(start)]);
+    const queue = [[ start ]];
+
+    while (queue.length) {
+        const path = queue.shift();
+        const { x, y } = path[path.length - 1];
+        if (x === target.x && y === target.y) return path;
+
+        for (const {dx,dy,dir} of DIRECTIONS) {
+            const nx = x + dx, ny = y + dy;
+            const k  = `${nx},${ny}`;
+            if (visited.has(k)) continue;
+            if (!map.isWalkable(nx, ny)) continue;
+            if (blockingSet.has(k)) continue;
+            visited.add(k);
+            queue.push(path.concat({ x: nx, y: ny, dir }));
+        }
+    }
+    return null;
+}
+
