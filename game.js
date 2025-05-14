@@ -96,7 +96,7 @@ function gameLoop(now) {
     LM.enemies.forEach(e => e.update(dt));
 
     //kill them
-    //LM.enemies.forEach(e => {LM.scheduleEnemyKill(e, 3000)});
+    LM.enemies.forEach(e => {LM.scheduleEnemyKill(e, 5000)});
 
     // removing dead enemies and changing score
     for (let i = LM.enemies.length - 1; i >= 0; i--) {

@@ -11,6 +11,7 @@ const MOVE_SPEED       = 100;    // px/s – základní rychlost pohybu
 const EVADE_SPEED_MULT = 2;     // násobek rychlosti při útěku
 const MOVE_DELAY       = 500;   // ms mezi normálními kroky
 const ANIM_DELAY       = 150;   // ms mezi snímky animace
+const ATTACK_RANGE = 5;
 const DIRECTIONS       = [
     { dir:'up', dx:0, dy:-1 },
     { dir:'down', dx:0, dy:1 },
@@ -275,21 +276,23 @@ export default class Enemy {
 
     /** Handle bomb planting logic; return true if action taken */
     _planAttack() {
-        // Only plant if we have no active bomb and not currently evading
         if (this.hasActiveBomb || this.evading) return false;
 
-        // If adjacent to destructible block
+        // 1) Adjacent‐destructible: only if existuje únik
         if (this._adjacentDestructible()) {
+            if (!this._canEscapeAfterBomb(this.xTile, this.yTile, 1))
+                return false;
             this._placeBomb();
             this._evade(this.xTile, this.yTile);
             return true;
         }
 
-        // If direct line of sight to player
+        // 2) LOS + vzdálenost ≤ ATTACK_RANGE: jen pokud pak dokážu utéct
         const dist = Math.abs(this.player.xTile - this.xTile)
             + Math.abs(this.player.yTile - this.yTile);
-        const ATTACK_RANGE = 5; // nastav, jak daleko enemy „cítí“ hráče
         if (this._canSeePlayer() && dist <= ATTACK_RANGE) {
+            if (!this._canEscapeAfterBomb(this.xTile, this.yTile, 1))
+                return false;
             this._placeBomb();
             this._evade(this.xTile, this.yTile);
             return true;
@@ -297,6 +300,58 @@ export default class Enemy {
 
         return false;
     }
+
+
+
+
+    /**
+     * Testuj, zda po položení bomby na (x,y) s daným range bude aspoň
+     * jedna safe dlaždice (využije _safeDirections(), která zohlední
+     * všechny bomby i explozní predikci).
+     */
+    /**
+     * Vícekroková simulace úniku:
+     * - simuluje přidání bomby (včetně predikce explozí všech bomb)
+     * - BFS hledá cestu k dlaždici s manh.dist > range
+     */
+    /**
+     * Jednoduchá BFS kontrola: existuje cesta k dlaždici
+     * s manh.dist > range, respektujíc pouze map.isWalkable().
+     */
+    _canEscapeAfterBomb(x, y, range) {
+        const startKey = `${x},${y}`;
+        const visited  = new Set([startKey]);
+        // fronta bodů {x,y}
+        const queue    = [{ x, y }];
+
+        while (queue.length) {
+            const cur = queue.shift();
+            // pokud jsme už dál než range, máme kam utéct
+            const md = Math.abs(cur.x - x) + Math.abs(cur.y - y);
+            if (md > range) {
+                return true;
+            }
+            // expanduj sousedy
+            for (const {dx, dy} of DIRECTIONS) {
+                const nx = cur.x + dx, ny = cur.y + dy;
+                const key = `${nx},${ny}`;
+                if (
+                    !visited.has(key) &&
+                    nx >= 0 && nx < this.map.cols &&
+                    ny >= 0 && ny < this.map.rows &&
+                    this.map.isWalkable(nx, ny)
+                ) {
+                    visited.add(key);
+                    queue.push({ x: nx, y: ny });
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+
 
     /**
      * Pokud jsme dost blízko, snažíme se hráče „přestřihnout“.
