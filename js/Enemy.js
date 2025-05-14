@@ -194,10 +194,13 @@ export default class Enemy {
      */
     _planChase() {
         // pro nahánění bereme celé predikované nebezpečí
-        const dangerAll = this._computeDangerZones();
-        const blocking = new Set([...dangerAll]);
-        // nechceme vstoupit ani do právě vybuchujících
-        this.explosions.forEach(e => blocking.add(`${e.x},${e.y}`));
+        // 1) sbíráme jen okamžité překážky: exploze + ležící bomby
+        const blocking = new Set(
+            this.explosions.map(e => `${e.x},${e.y}`)
+            );
+        for (const b of this.bombs) {
+            blocking.add(`${b.x},${b.y}`);
+        }
 
         const start  = { x: this.xTile, y: this.yTile };
         const target = { x: this.player.xTile, y: this.player.yTile };
@@ -208,6 +211,7 @@ export default class Enemy {
         this._startMoveTo(next.x, next.y, next.dir);
         return true;
     }
+
 
 
     /**
