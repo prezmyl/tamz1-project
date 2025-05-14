@@ -2,8 +2,8 @@
 
 import Bomb from './Bomb.js';
 
-// —————— Konstanty pro animaci a pohyb ——————
-const TOP_BORDER       = 20;    // pixely nad první řadou buněk v atlasu
+// ————— Konstanty pro animaci a pohyb —————
+const TOP_BORDER       = 20;    // pixely nad první řadou buněk
 const GRID_LINE        = 2;     // pixely mezi buňkami
 const FRAME_W          = 110;   // šířka jedné buňky
 const FRAME_H          = 110;   // výška jedné buňky
@@ -11,176 +11,339 @@ const MOVE_SPEED       = 80;    // px/s – základní rychlost pohybu
 const EVADE_SPEED_MULT = 2;     // násobek rychlosti při útěku
 const MOVE_DELAY       = 500;   // ms mezi normálními kroky
 const ANIM_DELAY       = 150;   // ms mezi snímky animace
+const DIRECTIONS       = [
+    { dir:'up', dx:0, dy:-1 },
+    { dir:'down', dx:0, dy:1 },
+    { dir:'left', dx:-1, dy:0 },
+    { dir:'right', dx:1, dy:0 }
+];
 
-// počet snímků ve vybrané části atlasu pro každý směr
+// animace 11 snímků na každý směr ve sheetu
 const FRAMES_PER_DIR = { down: 11, left: 11, right: 11, up: 11 };
-// index řádku v atlasu, kde je každá směrová animace
+// který řádek v sheetu pro který směr
 const ROW_FOR_DIR    = { down: 0, left: 6, right: 2, up: 4 };
 
 export default class Enemy {
-    static sheet;  // přiřadí se z game.js vedle Player.sheet
+    static sheet;  // přiřadí game.js
 
-    /**
-     * @param {number} xTile   výchozí X v dlaždicích
-     * @param {number} yTile   výchozí Y v dlaždicích
-     * @param {string} color
-     * @param {GameMap} map
-     * @param {Bomb[]} bombs
-     * @param {{x:number,y:number,time:number}[]} explosions
-     * @param {Player} player
-     * @param {number} moveDelay
-     * @param {number} bombTimer
-     * @param {number} tileSize
-     */
     constructor(xTile, yTile, color,
                 map, bombs, explosions,
                 player, moveDelay, bombTimer,
                 tileSize) {
-        // gridové souřadnice
-        this.xTile         = xTile;
-        this.yTile         = yTile;
-        this.tileSize      = tileSize;
+        // grid coords
+        this.xTile      = xTile;
+        this.yTile      = yTile;
+        this.tileSize   = tileSize;
+        // pixel coords
+        this.x          = xTile * tileSize;
+        this.y          = yTile * tileSize;
+        this.startX     = this.x;
+        this.startY     = this.y;
+        this.targetX    = this.x;
+        this.targetY    = this.y;
+        this.moving     = false;
 
-        // pixelové souřadnice
-        this.x             = xTile * tileSize;
-        this.y             = yTile * tileSize;
-        this.startX        = this.x;
-        this.startY        = this.y;
-        this.targetX       = this.x;
-        this.targetY       = this.y;
-        this.moving        = false;
+        // game refs
+        this.color      = color;
+        this.map        = map;
+        this.bombs      = bombs;
+        this.explosions = explosions;
+        this.player     = player;
 
-        // reference do herních objektů
-        this.color         = color;
-        this.map           = map;
-        this.bombs         = bombs;
-        this.explosions    = explosions;
-        this.player        = player;
-
-        // timery a stavy
-        this.moveDelay     = moveDelay;
+        // state + timers
         this.moveTimer     = 0;
         this.bombTimer     = bombTimer;
         this.evading       = false;
         this.evadeTimer    = 0;
         this.hasActiveBomb = false;
+        this.lastBombTile  = null;
 
-        // animace
-        this.dir           = 'down';
-        this.frame         = 0;
-        this._animTime     = 0;
+        // wander inertia
+        this.preferredDir  = null;
+        this.straightSteps = 0;
 
-        // pro útěk od poslední položení bomby
-        this.lastBombTile  = null; // { x:…, y:… }
+        // animation
+        this.dir        = 'down';
+        this.frame      = 0;
+        this._animTime  = 0;
     }
 
     /**
-     * @param {number} dt  ms od posledního frame
+     * @param {number} dt  ms od posledního volání
      */
     update(dt) {
-        // 1) sníž evasion timer
+        if (this._assessThreat(dt)) return;
+        if (this._planAttack()) return;
+        if (this._planMovement(dt)) return;
+        this._interpolate(dt);
+    }
+
+    /** Predict all tiles that will be in a bomb's explosion range */
+    _computeDangerZones() {
+        const danger = new Set();
+        for (const bomb of this.bombs) {
+            // Correctly extract bomb center coords (Bomb stores x, y)
+            const { x: bx, y: by, range = 1 } = bomb;
+            // Add epicenter
+            danger.add(`${bx},${by}`);
+            // Spread in four directions up to 'range'
+            for (const {dx,dy} of DIRECTIONS) {
+                for (let r = 1; r <= range; r++) {
+                    const nx = bx + dx * r;
+                    const ny = by + dy * r;
+                    // Stop if a solid or unbreakable block encountered
+                    if (!this.map.isWalkable(nx, ny) && this.map.data[ny][nx] !== 2) break;
+                    danger.add(`${nx},${ny}`);
+                }
+            }
+        }
+        return danger;
+    }
+
+
+
+    /** Returns list of safe directions considering current & future explosions */
+    _safeDirections() {
+        const danger = this._computeDangerZones();
+        return DIRECTIONS.map(({dir,dx,dy}) => ({
+            dir,
+            nx: this.xTile + dx,
+            ny: this.yTile + dy
+        })).filter(({nx,ny}) =>
+            // Only keep if walkable, not currently exploding, and not in future danger
+            this.map.isWalkable(nx, ny) &&
+            !this.explosions.some(e => e.x === nx && e.y === ny) &&
+            !danger.has(`${nx},${ny}`)
+        );
+    }
+
+    _planMovement(dt) {
+        // 1) akumulace času
+        this.moveTimer += dt;
+        if (this.moveTimer < MOVE_DELAY) return false;
+        this.moveTimer = 0;
+        if (this.moving) return true;
+
+        // 2) fáze podle priority
+        if (this._planEvade())  return true;
+        if (this._planChase())  return true;
+        return this._planWander();
+    }
+
+    /**
+     * BFS-based evasion: najde most distant safe tile a vybere první krok.
+     */
+    /**
+     * Simple evasion: vybere sousední tile nejdále od bomby.
+     */
+    _planEvade() {
+        if (!this.evading || !this.lastBombTile) return false;
+        // sběr sousedů bez aktuálních explozi
+        const safeDirs = DIRECTIONS.map(({dir,dx,dy}) => ({
+            dir,
+            nx: this.xTile + dx,
+            ny: this.yTile + dy
+        })).filter(({nx,ny}) =>
+            this.map.isWalkable(nx, ny) &&
+            !this.explosions.some(e => e.x === nx && e.y === ny)
+        );
+        if (!safeDirs.length) return false;
+        // najdi ten, co má největší manhattanský vzdálenost od epicentra
+        let best = safeDirs[0], bestDist = 0;
+        for (const cand of safeDirs) {
+            const d = Math.abs(cand.nx - this.lastBombTile.x)
+                + Math.abs(cand.ny - this.lastBombTile.y);
+            if (d > bestDist) { best = cand; bestDist = d; }
+        }
+        this._startMoveTo(best.nx, best.ny, best.dir);
+        return true;
+    }
+
+
+    /**
+     * BFS-based chase: najde shortest safe path k hráči.
+     */
+    _planChase() {
+        const danger = this._computeDangerZones();
+        const targetKey = `${this.player.xTile},${this.player.yTile}`;
+        const visited = new Set([`${this.xTile},${this.yTile}`]);
+        const queue   = [ [ { x: this.xTile, y: this.yTile } ] ];
+
+        while (queue.length) {
+            const path = queue.shift();
+            const { x, y } = path[path.length - 1];
+            if (`${x},${y}` === targetKey) {
+                if (path.length < 2) return false;
+                const next = path[1];
+                this._startMoveTo(next.x, next.y, next.dir);
+                return true;
+            }
+            for (const {dx,dy,dir} of DIRECTIONS) {
+                const nx = x + dx, ny = y + dy, key = `${nx},${ny}`;
+                if (visited.has(key) || !this.map.isWalkable(nx, ny) || danger.has(key)) continue;
+                visited.add(key);
+                queue.push(path.concat({ x: nx, y: ny, dir }));
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Wander: pokud mám preferredDir a straightSteps, pokračuj;
+     * jinak vyber náhodně z safeDirs.
+     */
+    _planWander() {
+        const safeDirs = this._safeDirections();
+        if (!safeDirs.length) return false;
+
+        // inertia
+        if (this.preferredDir && this.straightSteps > 0) {
+            const cont = safeDirs.find(d => d.dir === this.preferredDir);
+            if (cont) {
+                this.straightSteps--;
+                this._startMoveTo(cont.nx, cont.ny, cont.dir);
+                return true;
+            }
+        }
+
+        // fresh random
+        const rnd = safeDirs[Math.floor(Math.random() * safeDirs.length)];
+        this.preferredDir  = rnd.dir;
+        this.straightSteps = 2;
+        this._startMoveTo(rnd.nx, rnd.ny, rnd.dir);
+        return true;
+    }
+
+
+    /**
+     * Returns true if we handled threat (evading or waiting) and should stop update early
+     */
+    _assessThreat(dt) {
+        // Decrease evade timer
         if (this.evading) {
             this.evadeTimer -= dt;
             if (this.evadeTimer <= 0) {
                 this.evading = false;
-                this.lastBombTile = null;
+                // keep lastBombTile for explosion waiting
             }
         }
+        // If just finished evasion but explosion still present, wait
+        else if (this.lastBombTile) {
+            const stillDanger = this.explosions.some(e =>
+                e.x === this.lastBombTile.x && e.y === this.lastBombTile.y
+            );
+            if (stillDanger) return true;
+            this.lastBombTile = null;
+        }
 
-        // 2) pokud stojíme na explozi, vyvolat útěk
+        // If standing on explosion tile, trigger immediate evade
         if (!this.evading &&
             this.explosions.some(e => e.x === this.xTile && e.y === this.yTile)) {
             this._evade(this.xTile, this.yTile);
-            return;
+            return true;
         }
 
-        // 3) polož bombu u vedlejší zničitelné dlaždice
-        if (!this.hasActiveBomb && this._adjacentDestructible()) {
-            Bomb.place(this, this.map, this.bombs, this.explosions, this.bombTimer);
+        return false;
+    }
+
+    /** Handle bomb planting logic; return true if action taken */
+    _planAttack() {
+        // Only plant if we have no active bomb and not currently evading
+        if (this.hasActiveBomb || this.evading) return false;
+
+        // If adjacent to destructible block
+        if (this._adjacentDestructible()) {
+            this._placeBomb();
             this._evade(this.xTile, this.yTile);
-            return;
+            return true;
         }
 
-        // 4) polož bombu, když vidí hráče
-        if (!this.hasActiveBomb && this._canSeePlayer()) {
-            Bomb.place(this, this.map, this.bombs, this.explosions, this.bombTimer);
+        // If direct line of sight to player
+        if (this._canSeePlayer()) {
+            this._placeBomb();
             this._evade(this.xTile, this.yTile);
-            return;
+            return true;
         }
 
-        // 5) plánování dalšího kroku
-        if (!this.moving) {
-            // zvýš timer pokud neevadujeme, jinak planuj ihned
-            if (this.evading || (this.moveTimer += dt) >= this.moveDelay) {
-                this.moveTimer = 0;
+        return false;
+    }
 
-                // zjisti možné směry
-                let dirs = this._safeDirections();
+    /** Convenience to place a bomb and mark state */
+    _placeBomb() {
+        Bomb.place(
+            this,
+            this.map,
+            this.bombs,
+            this.explosions,
+            this.bombTimer
+        );
+        this.hasActiveBomb = true;
+        // Clear flag when bomb actually explodes via Bomb callbacks
+    }
 
-                if (this.evading && this.lastBombTile) {
-                    // řaď podle vzdálenosti od poslední bomby
-                    dirs = this._rankByBombDistance(dirs);
-                } else {
-                    // nekdyž nejde o útěk, zamíchej pro náhodný pohyb
-                    dirs = this._shuffle(dirs);
-                }
 
-                if (dirs.length) {
-                    const m = dirs[0];  // nejlepší nebo náhodná volba
-                    const nx = this.xTile + m.dx;
-                    const ny = this.yTile + m.dy;
 
-                    if (this.map.isWalkable(nx, ny)) {
-                        // grid coords hned aktualizuj pro logiku
-                        this.xTile = nx;
-                        this.yTile = ny;
+    /**
+     * Initiate evasion state
+     */
+    _evade(bombX, bombY) {
+        this.evading = true;
+        this.evadeTimer = 1000;
+        this.lastBombTile = { x: bombX, y: bombY };
+        // next update will plan the first escape move
+    }
 
-                        // naplánuj pixelovou interpolaci
-                        this.startX  = this.x;
-                        this.startY  = this.y;
-                        this.targetX = nx * this.tileSize;
-                        this.targetY = ny * this.tileSize;
-                        this.dir     = m.dx ===  1 ? 'right'
-                            : m.dx === -1 ? 'left'
-                                : m.dy ===  1 ? 'down'
-                                    : 'up';
-                        this.moving = true;
-                    }
-                }
-            }
-        }
+    // ... placeholder for _planAttack, _planMovement, _interpolate ...
+    /**
+     * Handles pixel interpolation and animation frame update
+     */
+    _interpolate(dt) {
+        if (!this.moving) return;
 
-        // 6) interpolace a animace
-        if (this.moving) {
-            const speed = this.evading
-                ? MOVE_SPEED * EVADE_SPEED_MULT
-                : MOVE_SPEED;
-            const step = speed * dt / 1000;
+        const speed = this.evading ? MOVE_SPEED * EVADE_SPEED_MULT : MOVE_SPEED;
+        const step  = speed * dt / 1000;
 
-            // posun v pixelech
-            if (this.x < this.targetX) this.x = Math.min(this.x + step, this.targetX);
-            else if (this.x > this.targetX) this.x = Math.max(this.x - step, this.targetX);
-            if (this.y < this.targetY) this.y = Math.min(this.y + step, this.targetY);
-            else if (this.y > this.targetY) this.y = Math.max(this.y - step, this.targetY);
+        // Move on X axis
+        if (this.x < this.targetX) this.x = Math.min(this.x + step, this.targetX);
+        else if (this.x > this.targetX) this.x = Math.max(this.x - step, this.targetX);
+        // Move on Y axis
+        if (this.y < this.targetY) this.y = Math.min(this.y + step, this.targetY);
+        else if (this.y > this.targetY) this.y = Math.max(this.y - step, this.targetY);
 
-            // spočti progres (0…1) a nastav frame
-            const prog = Math.abs(
-                (this.dir === 'left' || this.dir === 'right')
-                    ? (this.x - this.startX) / this.tileSize
-                    : (this.y - this.startY) / this.tileSize
-            );
-            this.frame = Math.min(
-                Math.floor(prog * FRAMES_PER_DIR[this.dir]),
-                FRAMES_PER_DIR[this.dir] - 1
-            );
+        // Update animation frame based on progress
+        const prog = Math.abs(
+            (this.dir === 'left' || this.dir === 'right')
+                ? (this.x - this.startX) / this.tileSize
+                : (this.y - this.startY) / this.tileSize
+        );
+        this.frame = Math.min(
+            Math.floor(prog * FRAMES_PER_DIR[this.dir]),
+            FRAMES_PER_DIR[this.dir] - 1
+        );
 
-            // dokončení pohybu
-            if (this.x === this.targetX && this.y === this.targetY) {
-                this.moving = false;
-                this.frame  = 0;
-            }
+        // Finish movement when target reached
+        if (this.x === this.targetX && this.y === this.targetY) {
+            this.moving = false;
+            this.frame  = 0;
         }
     }
+
+    // ... placeholders for _planAttack, _planMovement ...
+
+    /**
+     * Prepare interpolation: set new tile position and pixel targets
+     */
+    _startMoveTo(nx, ny, direction) {
+        this.xTile = nx;
+        this.yTile = ny;
+        this.startX  = this.x;
+        this.startY  = this.y;
+        this.targetX = nx * this.tileSize;
+        this.targetY = ny * this.tileSize;
+        this.dir     = direction;
+        this.moving  = true;
+    }
+
 
     draw(ctx) {
         if (!Enemy.sheet) {
@@ -188,91 +351,54 @@ export default class Enemy {
             ctx.fillRect(this.x, this.y, this.tileSize, this.tileSize);
             return;
         }
-
         ctx.save();
         ctx.filter = `hue-rotate(${this._hueRotate()}deg)`;
-
         const row = ROW_FOR_DIR[this.dir];
-        const sx  = GRID_LINE + this.frame * (FRAME_W + GRID_LINE);
-        const sy  = TOP_BORDER + row   * (FRAME_H + GRID_LINE);
-
+        const sx  = GRID_LINE + this.frame*(FRAME_W+GRID_LINE);
+        const sy  = TOP_BORDER + row*(FRAME_H+GRID_LINE);
         ctx.drawImage(
             Enemy.sheet,
             sx, sy, FRAME_W, FRAME_H,
-            this.x, this.y,
-            this.tileSize, this.tileSize
+            this.x, this.y, this.tileSize, this.tileSize
         );
         ctx.restore();
     }
 
     isHitByExplosion(explosions) {
-        return explosions.some(e => e.x === this.xTile && e.y === this.yTile);
+        return explosions.some(e=>e.x===this.xTile&&e.y===this.yTile);
     }
 
     _adjacentDestructible() {
         return [ {dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1} ]
-            .some(({dx,dy}) => {
-                const x = this.xTile + dx, y = this.yTile + dy;
-                return x>=0 && x<this.map.cols && y>=0 && y<this.map.rows
-                    && this.map.data[y][x] === 2;
+            .some(({dx,dy})=>{
+                const x=this.xTile+dx, y=this.yTile+dy;
+                return x>=0&&x<this.map.cols &&
+                    y>=0&&y<this.map.rows &&
+                    this.map.data[y][x]===2;
             });
     }
 
     _canSeePlayer() {
-        if (this.xTile === this.player.xTile) {
-            const [y1,y2] = [this.yTile,this.player.yTile].sort((a,b)=>a-b);
-            for (let y = y1 + 1; y < y2; y++)
-                if (!this.map.isWalkable(this.xTile, y)) return false;
+        if (this.xTile===this.player.xTile) {
+            const [y1,y2]=[this.yTile,this.player.yTile].sort((a,b)=>a-b);
+            for(let y=y1+1;y<y2;y++)
+                if(!this.map.isWalkable(this.xTile,y)) return false;
             return true;
         }
-        if (this.yTile === this.player.yTile) {
-            const [x1,x2] = [this.xTile,this.player.xTile].sort((a,b)=>a-b);
-            for (let x = x1 + 1; x < x2; x++)
-                if (!this.map.isWalkable(x, this.yTile)) return false;
+        if (this.yTile===this.player.yTile) {
+            const [x1,x2]=[this.xTile,this.player.xTile].sort((a,b)=>a-b);
+            for(let x=x1+1;x<x2;x++)
+                if(!this.map.isWalkable(x,this.yTile)) return false;
             return true;
         }
         return false;
     }
 
-    _safeDirections() {
-        return [ {dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1} ]
-            .filter(({dx,dy}) => {
-                const x = this.xTile + dx, y = this.yTile + dy;
-                return x>=0 && x<this.map.cols && y>=0 && y<this.map.rows
-                    && this.map.isWalkable(x, y)
-                    && !this.explosions.some(e => e.x===x && e.y===y);
-            });
-    }
 
-    _rankByBombDistance(dirs) {
-        const { x: bx, y: by } = this.lastBombTile || {};
-        return dirs.map(m => {
-            const x = this.xTile + m.dx, y = this.yTile + m.dy;
-            const dist = Math.abs(bx - x) + Math.abs(by - y);
-            return { m, dist };
-        })
-            .sort((a, b) => b.dist - a.dist)
-            .map(o => o.m);
-    }
 
-    _shuffle(arr) {
-        // Fisher–Yates shuffle
-        for (let i = arr.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
-        return arr;
-    }
-
-    _evade(bombX, bombY) {
-        this.evading      = true;
-        this.evadeTimer   = 1000;
-        this.lastBombTile = { x: bombX, y: bombY };
-        // první krok naplánuje update(), žádný teleport
-    }
 
     _hueRotate() {
-        switch(this.color) {
+        switch(this.color){
             case 'green': return 120;
             case 'blue':  return 240;
             case 'red':   return   0;

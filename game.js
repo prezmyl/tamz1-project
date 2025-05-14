@@ -119,17 +119,19 @@ function gameLoop(now) {
     // mapa
     LM.map.draw(ctx);
 
-    // hrac
-    LM.player.draw(ctx, LM.map.tileSize);
 
-    // enemies
-    LM.enemies.forEach(e => e.draw(ctx, LM.map.tileSize));
 
     // bombs (in-place removing explouaded and draw)
     for (let i = LM.bombs.length - 1; i >= 0; i--) {
         if (!LM.bombs[i].active) LM.bombs.splice(i, 1);
     }
     LM.bombs.forEach(b => b.draw(ctx, LM.map.tileSize));
+
+    // hrac
+    LM.player.draw(ctx);
+
+    // enemies
+    LM.enemies.forEach(e => e.draw(ctx, LM.map.tileSize));
 
     // exploze (in-place odstranění a vykreslení)
     for (let i = LM.explosions.length - 1; i >= 0; i--) {

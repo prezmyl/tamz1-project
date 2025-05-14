@@ -1,0 +1,123 @@
+Níže je podrobná dekompozice a kritická analýza toho, jak teď vaše třída Enemy rozhoduje o pohybu, kde se projevují konflikty nebo nedotažené části, a pak návrh na běžně používaný jednoduchý vzor („flowchart“) pro Bomberman‐AI.
+
+1) Současná logika update() v Enemy.js
+Evasion timer
+
+Pokud this.evading === true, snižuje se this.evadeTimer o dt.
+
+Jakmile evadeTimer <= 0, přepne this.evading = false (ale ponechá lastBombTile – viz 1.1).
+
+Zamrznutí při probíhající explozi
+
+Pokud !this.evading ale this.lastBombTile není null, kontroluje se, zda lastBombTile je ještě v this.explosions.
+
+Pokud ano, vrací return; hned z update(), tedy žádný další krok ani plánování.
+
+Tím nepřítel zůstane stát, dokud explozní dlaždice nezmizí.
+
+Okamžitá evakuace z výbuchu
+
+Pokud stojí na dlaždici, která je v this.explosions, hned zavolá _evade(this.xTile, this.yTile) a vrací return;.
+
+Tím zahájí okamžité vyhýbání.
+
+Ofenzivní chování
+
+Pokud nemá aktivní bombu a je vedle zničitelné cihly, položí bombu a evakuje se.
+
+Pokud nemá bombu a vidí hráče na přímce (řádek/sloupec), položí bombu a evakuje se.
+
+Po každém z těchto kroků vrací return, takže se neplánuje další pohyb.
+
+Plánování dalšího kroku (pouze pokud !this.moving)
+
+5.1 Získá si všechny „safeDirs“ přes _safeDirections(), tedy směrné vektory, kde:
+
+souřadnice jsou v mapě,
+
+dlaždice je průchozí (!isWalkable(…)),
+
+a není v právě probíhajících výbuších (this.explosions). EnemyEnemy
+
+5.2 Pokud this.evading && this.lastBombTile, seřadí je podle vzdálenosti od lastBombTile a vybere nejvzdálenější.
+
+5.3 Jinak, pokud má „setrvačný“ směr (preferredDir) a zbývají kroky, pokračuje rovně.
+
+5.4 Jinak náhodně zamíchá a vezme první, uloží preferredDir + straightSteps.
+
+5.5 Pokud žádný safeDir, vrací return; (stačí vyčkat další update).
+
+5.6 Konflikt! – willExplodeHere
+
+js
+Copy
+Edit
+const willExplodeHere = this.explosions
+  .some(e=>e.x===nx&&e.y===ny);
+if (willExplodeHere) {
+  // jen smaže z safeDirs, ale **nedá** return ani re-cykl
+  if (idx>=0) safeDirs.splice(idx,1);
+  // ALE: kod pak pokračuje dál a volá _startMoveTo na (nx,ny) ⇒ vchází do exploze
+}
+this._startMoveTo(nx, ny, choice);
+Tohle je jasně nedotažené: buď by mělo být return; a hledat nový směr, nebo re-loop nad safeDirs. Teď ale přesto vykročí do nebezpečné dlaždice. EnemyEnemy
+
+Interpolace pohybu
+
+Pokud this.moving, po krocích pixely doladí pozici a animaci, a jakmile dosáhne targetX/Y, nastaví this.moving=false. EnemyEnemy
+
+2) Hlavní konflikty a slabá místa
+Část	Problém
+1.1 (zamrznutí)	Po skončení evasion timeru, ale dokud jsou dlaždice s explozí v this.explosions, nic se neděje. Pokud exploze trvá déle nebo je někde jiný bug, může zůstat stát až donuceně ve výbuchu. EnemyEnemy
+5.6 (willExplodeHere)	Namísto skutečné ochrany kódu je blok pouze částečný – odstraní směr, ale nepřeruší akci, a pak stejně krok provede. EnemyEnemy
+Anticipace explozí	_safeDirections() řeší pouze dlaždice, kde je právě výbuch, ale nebere v úvahu, že bomby vybuchnou za bombTimer a jejich radius (centrální + 4 sousední).
+Překombinovanost	Všechny ty kroky 1–6 jsou v jednom update() a navzájem si zasahují (return; v mnoha místech), což je těžké udržovat a testovat.
+
+3) Doporučený vzor („flowchart“) pro Bomberman‐AI
+Threat assessment (Ohrožení)
+
+Pokud je aktuální nebo brzy bude výbuch na mé dlaždici (nebo v radiusu), přejít k „Evade“.
+
+Evade (Útěk)
+
+Zjistit bezpečné dlaždice: vypočítat, jaké dlaždice v radiusu bomby nebezpečí zasáhne (ideálně s ohledem na bombTimer).
+
+Najít nejkratší cestu (např. BFS), která vede co nejdále od epicentra.
+
+Pohybovat se touto cestou, dokud ohrožení trvá.
+
+Attack setup (Ofenzíva)
+
+Pokud vidím hráče v řádku nebo sloupci (bez překážek), chci položit bombu tak, aby mu zakryl únikovou cestu.
+
+Pokud jsem vedle rozbitné cihly, položit bombu (a připravit útěk).
+
+Chase (Hrácův lov)
+
+Můj cíl je dostat se blíž k hráči – najít kratší cestu (např. A* nebo BFS) k hráči a pohybovat se po ní.
+
+Patrol / Wander (Patrola)
+
+Náhodně nebo „setrvačně“ chodím v mapě, abych ji prohledal či zahltil hráčův únik.
+
+Priority ordering
+Threat
+
+Evade (rozhodnutí o cestě a pohyb)
+
+Plant‐and‐Run (zajištění útěku při bombě)
+
+Chase
+
+Wander
+
+4) Jak postupovat dál?
+Rozdělit update() na menší samostatné metody:
+
+assessThreat(), planEvade(), planAttack(), planChase(), planWander().
+
+Implementovat skutečné willExplodeHere před plánováním – tzn. v safeDirections zahrnout i dlaždice, kam bomby dopadnou.
+
+Nahradit laciné return; za jasné stavové přechody mezi fázemi chování.
+
+Použít BFS/A* pro nejbližší únikovou cestu místo čistě náhodných kroků či čisté Manhattan distance.
