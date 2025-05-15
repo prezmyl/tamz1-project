@@ -7,16 +7,17 @@ import Score   from './Score.js';
 import Bomb    from './Bomb.js';
 
 export default class LevelManager {
-    constructor(ctx) {
+    constructor(ctx, tilesImg) {
         this.ctx = ctx;
         this.score = new Score(0);
         this.current = 0;
         this.gameOver = false;
+        this.tilesImg = tilesImg;
     }
 
     load(levelIndex) {
         const lvl = levels[levelIndex];
-        this.map    = new GameMap(lvl.mapData, lvl.mapData[0].length, lvl.mapData.length, lvl.tileSize, this.bombs);
+        this.map    = new GameMap(lvl.mapData, lvl.mapData[0].length, lvl.mapData.length, lvl.tileSize, this.bombs, this.tilesImg);
         this.player = new Player(lvl.playerStart.x, lvl.playerStart.y, lvl.tileSize);
         this.bombs  = [];
         this.map.bombs = this.bombs
