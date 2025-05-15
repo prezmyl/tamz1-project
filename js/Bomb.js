@@ -1,5 +1,13 @@
 // Bomb.js
+import Explosion from './Explosion.js';
+import BombAnimation from './BombAnimation.js';
+import Enemy from "./Enemy.js";
 
+const HUE_ROTATIONS = {
+    green: 120,
+    blue:  240,
+    red:     0
+};
 export default class Bomb {
     constructor(xTile, yTile, map, owner, explosionTiles, timer) {
         // xTile/yTile místa bomby
@@ -12,6 +20,19 @@ export default class Bomb {
         this.owner = owner;
         this.owner.hasActiveBomb = true;
         this.explosionTiles = explosionTiles;
+        this.hueRotation = HUE_ROTATIONS[ owner.color ] || 0;
+
+        this.bornAt     = performance.now();
+        this.timer      = timer;
+        // instead of a plain circle we now delegate to a BombAnimation
+        this.anim       = new BombAnimation(
+            xTile, yTile,
+            Enemy.sheet,    // loaded sprite‐sheet
+            this.map.tileSize,
+            this.bornAt,
+            this.timer,
+            this.hueRotation
+        );
 
         setTimeout(() => {
             this.explode();
@@ -19,16 +40,15 @@ export default class Bomb {
         }, timer);
     }
 
-    draw(ctx, tileSize) {
+    update(dt, now) {
+        // nothing else here for now, but you could decrement a fuse‐sound timer, etc.
+        // keep the alive‐flag logic as is (setTimeout → explode())
+    }
+
+    draw(ctx, tileSize, now) {
         if (!this.active) return;
-        ctx.fillStyle = "red";
-        ctx.beginPath();
-        ctx.arc(
-            (this.x + 0.5) * tileSize,
-            (this.y + 0.5) * tileSize,
-            tileSize / 3, 0, Math.PI * 2
-        );
-        ctx.fill();
+        // draw the countdown sprite
+        this.anim.draw(ctx, now);
     }
 
     explode() {
@@ -39,9 +59,11 @@ export default class Bomb {
         ];
         for (const {dx,dy} of dirs) {
             const tx = this.x + dx, ty = this.y + dy;
-            if (tx>=0 && tx<this.mapCols && ty>=0 && ty<this.mapRows) {
-                this.map.destroyTile(tx, ty);
-                this.explosionTiles.push({ x: tx, y: ty, time: Date.now() });
+            if (this.map.data[ty][tx] !== 1) {      // 1 = pevná zeď → tam nic nekreslíme
+                this.map.destroyTile(tx, ty);         // zničitelná cihla
+                this.explosionTiles.push(
+                    new Explosion(tx, ty, Enemy.sheet, this.map.tileSize, performance.now(), this.hueRotation)
+                );
             }
         }
         this.owner.hasActiveBomb = false;

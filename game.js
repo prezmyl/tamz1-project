@@ -3,6 +3,12 @@ import Bomb         from './js/Bomb.js';
 import Player from "./js/Player.js";
 import Enemy from "./js/Enemy.js";
 
+import Explosion from './js/Explosion.js';
+// …
+
+// …
+
+
 
 // ======== init ========
 // get canvas and its context
@@ -125,7 +131,11 @@ function gameLoop(now) {
     for (let i = LM.bombs.length - 1; i >= 0; i--) {
         if (!LM.bombs[i].active) LM.bombs.splice(i, 1);
     }
-    LM.bombs.forEach(b => b.draw(ctx, LM.map.tileSize));
+    LM.bombs.forEach(b => {
+        b.update(dt, now);                   // advance any internal state
+        b.draw(ctx, LM.map.tileSize, now);  // render the right bomb‐frame
+    });
+
 
     // hrac
     LM.player.draw(ctx);
@@ -139,15 +149,19 @@ function gameLoop(now) {
             LM.explosions.splice(i, 1);
         }
     }
-    LM.explosions.forEach(tile => {
-        ctx.fillStyle = "orange";
-        ctx.fillRect(
-            tile.x * LM.map.tileSize,
-            tile.y * LM.map.tileSize,
-            LM.map.tileSize,
-            LM.map.tileSize
-        );
-    });
+    // 1) Update a vykreslení explosion instancí
+   // const now = Date.now();
+    const ts = LM.map.tileSize;
+    //const now = Date.now();
+
+    for (let i = LM.explosions.length - 1; i >= 0; i--) {
+        const ex = LM.explosions[i];
+
+        ex.draw(ctx, now);
+        if (ex.isDone(now)) LM.explosions.splice(i,1);
+
+    }
+
 
     // score
     LM.score.draw(ctx);
@@ -159,6 +173,8 @@ playerSheet.onload = () => {
     // 1) přiřazení atlasu
     Player.sheet = playerSheet;
     Enemy.sheet  = playerSheet;
+    Bomb.sheet   = playerSheet;
+
 
     // 2) inicializace LevelManageru
     LM = new LevelManager(ctx);
