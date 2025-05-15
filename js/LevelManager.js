@@ -16,9 +16,10 @@ export default class LevelManager {
 
     load(levelIndex) {
         const lvl = levels[levelIndex];
-        this.map    = new GameMap(lvl.mapData, lvl.mapData[0].length, lvl.mapData.length, lvl.tileSize);
+        this.map    = new GameMap(lvl.mapData, lvl.mapData[0].length, lvl.mapData.length, lvl.tileSize, this.bombs);
         this.player = new Player(lvl.playerStart.x, lvl.playerStart.y, lvl.tileSize);
         this.bombs  = [];
+        this.map.bombs = this.bombs
         this.explosions = [];
         this.enemies = lvl.enemyStarts.map(pos =>
             new Enemy(pos.x, pos.y, 'blue',

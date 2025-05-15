@@ -6,11 +6,12 @@ export default class GameMap {
      * @param {number} rows        pocet radku
      * @param {number} tileSize    velikost dlazdicce v pixelech
      */
-    constructor(data, cols, rows, tileSize) {
+    constructor(data, cols, rows, tileSize, bombs) {
         this.data     = data;
         this.cols     = cols;
         this.rows     = rows;
         this.tileSize = tileSize;
+        this.bombs = bombs;
     }
 
     draw(ctx) {
@@ -31,7 +32,10 @@ export default class GameMap {
     }
 
     isWalkable(x, y) {
-        return this.data[y][x] !== 1 && this.data[y][x] !== 2;
+        if (this.data[y][x] === 1 || this.data[y][x] === 2) return false;
+        // 2) aktivní bomba = neprůchozí
+        if (this.bombs.some(b => b.x === x && b.y === y && b.active)) return false;
+        return true;
     }
 
     destroyTile(x, y) {
