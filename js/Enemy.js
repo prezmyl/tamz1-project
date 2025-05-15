@@ -58,6 +58,7 @@ export default class Enemy {
         this.evadeTimer    = 0;
         this.hasActiveBomb = false;
         this.lastBombTile  = null;
+        this._firstBombDelay = 700;
 
         // wander inertia
         this.preferredDir  = null;
@@ -73,9 +74,25 @@ export default class Enemy {
      * @param {number} dt  ms od posledního volání
      */
     update(dt) {
-        if (this._assessThreat(dt)) return;
-        if (this._planAttack()) return;
-        if (this._planMovement(dt)) return;
+        // consume that delay before any other logic
+        if (this._firstBombDelay > 0) {
+            this._firstBombDelay -= dt;
+            // still waiting? skip all bomb logic (but still interpolate / move if you want)
+            return this._interpolate(dt);
+        }
+
+        if (this._assessThreat(dt)) {
+            this._interpolate(dt);
+            return;
+        }
+        if (this._planAttack()) {
+            this._interpolate(dt);
+            return;
+        }
+        if (this._planMovement(dt)) {
+            this._interpolate(dt);
+            return;
+        }
         this._interpolate(dt);
     }
 
@@ -113,7 +130,7 @@ export default class Enemy {
         })).filter(({nx,ny}) =>
             // Only keep if walkable, not currently exploding, and not in future danger
             this.map.isWalkable(nx, ny) &&
-            !this.explosions.some(e => e.x === nx && e.y === ny) &&
+            !this.explosions.some(e => e.xTile === nx && e.yTile === ny) &&
             !danger.has(`${nx},${ny}`)
         );
     }
@@ -491,7 +508,7 @@ export default class Enemy {
     }
 
     isHitByExplosion(explosions) {
-        return explosions.some(e=>e.x===this.xTile&&e.y===this.yTile);
+        return explosions.some(e=>e.xTile===this.xTile&&e.yTile===this.yTile);
     }
 
     _adjacentDestructible() {

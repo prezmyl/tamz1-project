@@ -11,6 +11,8 @@ export default class Explosion {
     constructor(xTile, yTile, sheet, tileSize, bornAt, hueRotation = 0) {
         this.xTile    = xTile;
         this.yTile    = yTile;
+        this.x    = xTile;
+        this.y    = yTile;
         this.sheet    = sheet;
         this.tileSize = tileSize;
         this.bornAt   = bornAt;

@@ -72,7 +72,7 @@ export const levels = [
         playerStart: { x:1, y:1 },
         enemyStarts: [ {x:1,y:10}, {x:16,y:10}],
         tileSize: 40,
-        bombTimer: 1000,
-        enemyMoveDelay: 300,
+        bombTimer: 1500,
+        enemyMoveDelay: 200,
     },
 ];

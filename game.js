@@ -101,7 +101,9 @@ function gameLoop(now) {
     }
 
     // if level clear, advance
-    if (LM.enemies.length === 0) {
+    if (LM.enemies.length === 0 &&
+        LM.bombs.length    === 0 &&
+        LM.explosions.length === 0) {
         LM.next();
         requestAnimationFrame(gameLoop);
         return;
