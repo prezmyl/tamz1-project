@@ -49,11 +49,13 @@ export default class Bomb {
     }
 
     static place(owner, map, bombs, explosionTiles, timer) {
-        // pokud má owner .xTile, použijeme jej
-        const x = owner.xTile !== undefined ? owner.xTile : owner.x;
-        const y = owner.yTile !== undefined ? owner.yTile : owner.y;
+        const ts = owner.tileSize;
+        // vezmeme střed hráče/enemy a přepočteme na tile
+        const xTile = Math.floor((owner.x + ts/2) / ts);
+        const yTile = Math.floor((owner.y + ts/2) / ts);
         if (owner.hasActiveBomb) return;
-        const bomb = new Bomb(x, y, map, owner, explosionTiles, timer);
+        if (bombs.some(b => b.x===xTile && b.y===yTile && b.active)) return;
+        const bomb = new Bomb(xTile, yTile, map, owner, explosionTiles, timer);
         bombs.push(bomb);
     }
 }

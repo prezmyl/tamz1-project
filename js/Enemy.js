@@ -392,16 +392,20 @@ export default class Enemy {
 
     /** Convenience to place a bomb and mark state */
     _placeBomb() {
-        Bomb.place(
-            this,
-            this.map,
-            this.bombs,
+        // použijeme přímo this.xTile / this.yTile
+        if (this.hasActiveBomb) return;
+        if (this.bombs.some(b => b.x===this.xTile && b.y===this.yTile && b.active))
+            return;
+        const bomb = new Bomb(
+            this.xTile, this.yTile,
+            this.map, this,
             this.explosions,
             this.bombTimer
         );
+        this.bombs.push(bomb);
         this.hasActiveBomb = true;
-        // Clear flag when bomb actually explodes via Bomb callbacks
     }
+
 
 
 
