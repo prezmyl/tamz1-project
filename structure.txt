@@ -1,5 +1,7 @@
 .
 ├── assets
+│   └── Atomic_Bomberman_Green.png
+├── conceptAI.txt
 ├── domluvena_predbezna_specifikace.txt
 ├── game.js
 ├── icons
@@ -14,14 +16,10 @@
 │   ├── levels.js
 │   ├── Player.js
 │   └── Score.js
+├── konzultace.txt
+├── logChagtGPT.txt
 ├── manifest.json
 ├── node_modules
-│   ├── @babel
-│   ├── @ioredis
-│   ├── @noble
-│   ├── @paralleldrive
-│   ├── @socket.io
-│   └── @types
 ├── obecne_informace_project.txt
 ├── package.json
 ├── package-lock.json
@@ -29,4 +27,4 @@
 ├── style.css
 └── sw.js
 
-11 directories, 19 files
+5 directories, 23 files
