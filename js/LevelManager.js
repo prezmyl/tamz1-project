@@ -23,26 +23,35 @@ export default class LevelManager {
 
     }
 
-    draw() {
-        // 1) draw the background
-        const sx = this.FIELD_BORDER
-            + this.bgCol * (this.FIELD_W + this.FIELD_BORDER);
-        const sy = this.FIELD_BORDER + this.TOP_BORDER_Y
-            + this.bgRow * (this.FIELD_H + this.FIELD_BORDER + this.TOP_BORDER_Y);
+    // LevelManager.js
 
-        // stretch the 640×480 block to fill your game area
+    draw() {
+        // figure out which 640×480 chunk to slice from fieldsImg
+        const sx = this.FIELD_BORDER + this.bgCol * (this.FIELD_W + this.FIELD_BORDER);
+        const sy = this.FIELD_BORDER
+            + (this.bgRow === 0 ? this.TOP_BORDER_Y : 0)
+            + this.bgRow * (this.FIELD_H + this.FIELD_BORDER);
+
+        // how big is our logical map in pixels?
+        const mapW = this.map.cols * this.map.tileSize;
+        const mapH = this.map.rows * this.map.tileSize;
+
+        // where on screen do we draw it?
+        const dx = this.offsetX;
+        const dy = this.offsetY;
+
+        // 1) draw *only* that map‐sized background region
         this.ctx.drawImage(
             this.fieldsImg,
-            sx, sy, this.FIELD_W, this.FIELD_H,
-            0, 0,
-            this.map.cols * this.map.tileSize,
-            this.map.rows * this.map.tileSize
+            sx, sy,                 // source x,y
+            this.FIELD_W, this.FIELD_H,  // source w,h
+            dx, dy,                 // dest x,y
+            mapW, mapH              // dest w,h
         );
 
-        // 2) draw the map, bombs, players, etc…
-        this.map.draw(this.ctx);
-        // … rest of your draw logic …
+        // 👉 NO this.map.draw() here any more
     }
+
 
     load(levelIndex) {
         const lvl = levels[levelIndex];

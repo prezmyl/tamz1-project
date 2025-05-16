@@ -107,4 +107,16 @@ export default class Player {
             this.tileSize, this.tileSize
         );
     }
+
+
+    resetInterpolation() {
+        this.x     = this.xTile * this.tileSize;
+        this.y     = this.yTile * this.tileSize;
+        this.targetX = this.x;
+        this.targetY = this.y;
+        this.moving  = false;
+        this.frame   = 0;
+        this._animTime = 0;
+    }
+
 }

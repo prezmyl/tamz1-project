@@ -474,6 +474,21 @@ export default class Enemy {
         }
     }
 
+
+    resetInterpolation() {
+        this.x     = this.xTile * this.tileSize;
+        this.y     = this.yTile * this.tileSize;
+        this.startX  = this.x;
+        this.startY  = this.y;
+        this.targetX = this.x;
+        this.targetY = this.y;
+        this.moving  = false;
+        this.frame   = 0;
+        this._animTime = 0;
+        this.evading = false;
+    }
+
+
     // ... placeholders for _planAttack, _planMovement ...
 
     /**

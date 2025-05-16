@@ -5,6 +5,9 @@ export default class Score {
      */
     constructor(initialValue = 0) {
         this.value = initialValue;
+        this.x = 10;
+        this.y = 25;
+        this.level = 1;
     }
 
     /**
@@ -22,7 +25,8 @@ export default class Score {
     draw(ctx) {
         ctx.fillStyle = "white";
         ctx.font = "20px Arial";
-        ctx.fillText(`Score: ${this.value}`, 10, 25);
+        ctx.fillText(`Score: ${this.value}`, this.x, this.y);
+        ctx.fillText(`Level: ${this.level}`, this.x, this.y + 20);
     }
 
 
