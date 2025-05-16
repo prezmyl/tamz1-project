@@ -1,6 +1,7 @@
 // Enemy.js
 
 import Bomb from './Bomb.js';
+import { tickSound, boomSound } from '../game.js';
 
 // ————— Konstanty pro animaci a pohyb —————
 const TOP_BORDER       = 20;    // pixely nad první řadou buněk
@@ -413,6 +414,8 @@ export default class Enemy {
         if (this.hasActiveBomb) return;
         if (this.bombs.some(b => b.x===this.xTile && b.y===this.yTile && b.active))
             return;
+        tickSound.currentTime = 0;
+        tickSound.play().catch(()=>{});
         const bomb = new Bomb(
             this.xTile, this.yTile,
             this.map, this,

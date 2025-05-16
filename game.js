@@ -92,9 +92,10 @@ function gameLoop(now) {
     LM.player.update(dt, LM.map, keys);
     LM.enemies.forEach(e => e.update(dt));
 
-    //KILL all -> comment in to stop automatic self destruction
+//KILL all -> comment in to stop automatic self destruction
     //LM.enemies.forEach(e => {e.killAll(2000)})
-    Enemy.killAll(LM.enemies,2000);
+//    Enemy.killAll(LM.enemies,2000);
+
     // eliminate any enemies hit by explosions
     for (let i = LM.enemies.length - 1; i >= 0; i--) {
         if (LM.enemies[i].isHitByExplosion(LM.explosions)) {
@@ -150,6 +151,8 @@ function gameLoop(now) {
 // ——————————————————————————————————————————————————
 //  ASSET LOADING
 // ——————————————————————————————————————————————————
+
+// —————————— Images ——————————
 const playerSheet = new Image();
 playerSheet.src   = 'assets/Atomic_Bomberman_Green.png';
 
@@ -166,6 +169,15 @@ function onAssetLoad() {
 playerSheet.onload = onAssetLoad;
 tilesImg.onload    = onAssetLoad;
 fieldsImg.onload   = onAssetLoad;
+
+// —————————— Sound ——————————
+export const tickSound = new Audio('assets/sounds/tick.ogg');
+export const boomSound = new Audio('assets/sounds/boom.ogg');
+// Optional: background loop
+const bgMusic   = new Audio('assets/sounds/bg.ogg');
+bgMusic.loop    = true;
+bgMusic.volume  = 0.3;   // dial it down a bit
+
 
 // ——————————————————————————————————————————————————
 //  INITIALIZE EVERYTHING
@@ -186,6 +198,11 @@ function initGame() {
     LM.player.x = LM.player.xTile * ts;
     LM.player.y = LM.player.yTile * ts;
     LM.enemies.forEach(e => e.tileSize = ts);
+
+    // START background music *after* user interaction if needed
+    bgMusic.play().catch(() => {
+        // some browsers require a user gesture; you can defer until first key/touch
+    });
 
     // 4) start the loop
     lastFrameTime = performance.now();

@@ -1,6 +1,12 @@
 .
 ├── assets
-│   └── Atomic_Bomberman_Green.png
+│   ├── Atomic_Bomberman_Fields.png
+│   ├── Atomic_Bomberman_Green.png
+│   ├── Atomic_Bomberman_Tiles.png
+│   └── sounds
+│       ├── bg.ogg
+│       ├── boom.ogg
+│       └── tick.ogg
 ├── conceptAI.txt
 ├── domluvena_predbezna_specifikace.txt
 ├── game.js
@@ -9,22 +15,24 @@
 │   └── icon-512.png
 ├── index.html
 ├── js
+│   ├── BombAnimation.js
 │   ├── Bomb.js
 │   ├── Enemy.js
+│   ├── Explosion.js
 │   ├── GameMap.js
 │   ├── LevelManager.js
 │   ├── levels.js
 │   ├── Player.js
 │   └── Score.js
 ├── konzultace.txt
-├── logChagtGPT.txt
 ├── manifest.json
 ├── node_modules
 ├── obecne_informace_project.txt
 ├── package.json
 ├── package-lock.json
+├── planGPT.txt
 ├── structure.txt
 ├── style.css
 └── sw.js
 
-5 directories, 23 files
+6 directories, 30 files

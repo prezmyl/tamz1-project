@@ -2,6 +2,7 @@
 import Explosion from './Explosion.js';
 import BombAnimation from './BombAnimation.js';
 import Enemy from "./Enemy.js";
+import { tickSound, boomSound } from '../game.js';
 
 const HUE_ROTATIONS = {
     green: 120,
@@ -52,6 +53,9 @@ export default class Bomb {
     }
 
     explode() {
+        boomSound.currentTime = 0;
+        boomSound.play().catch(()=>{});
+
         const dirs = [
             { dx: 0, dy: 0 }, { dx: 1, dy: 0 },
             { dx: -1, dy: 0 },{ dx: 0, dy: 1 },
@@ -77,6 +81,8 @@ export default class Bomb {
         const yTile = Math.floor((owner.y + ts/2) / ts);
         if (owner.hasActiveBomb) return;
         if (bombs.some(b => b.x===xTile && b.y===yTile && b.active)) return;
+        tickSound.currentTime = 0;
+        tickSound.play().catch(()=>{});
         const bomb = new Bomb(xTile, yTile, map, owner, explosionTiles, timer);
         bombs.push(bomb);
     }

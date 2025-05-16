@@ -1,0 +1,45 @@
+
+## 📅 Den 1 
+
+| Čas (h)   | Úkol                                                                                                                                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **1 h**   | **Příprava assetů**:<br>– Připrav PNG/sprite-sheety pro dlaždice (stěna, zdi, podlaha), hráče, nepřítele, bombu, explozi, případně jednoduché částice. Ulož do `assets/tiles/`, `assets/characters/`, `assets/effects/`. |
+| **0,5 h** | **Preload** všech obrázků ve `game.js`:<br>– Vytvoř `ASSETS = { wall, brick, floor, player, enemy, bomb, explosionSheet }`, nastav `img.src`, čekej na `onload`.                                                         |
+| **1,5 h** | **Textury prostředí** (`GameMap.draw()`):<br>– Nahraď `fillRect` voláním `ctx.drawImage(ASSETS.[…], …)`. Otestuj první úroveň.                                                                                           |
+| **1 h**   | **Textury bomby & hráče** (`Bomb.draw()`, `Player.draw()`):<br>– Kresli místo kruhů a obdélníků skutečné obrázky, uprav velikosti dle `tileSize`.                                                                        |
+| **2 h**   | **Animace exploze**:<br>– V `renderExplosions()` vypočítej `frame = floor((now–start)/frameTime)`, vykresli z `explosionSheet`, vyčisti po skončení animace.                                                             |
+| **1 h**   | **Jednoduché částicové efekty**:<br>– Při explosích spawnuj pár (`10–20`) kruhů/čtverečků s životností 300 ms, fade-out na alfě.                                                                                         |
+
+> **Stav po dni 1:**
+> – Textury + animace exploze + základní particle efekt ✔️
+> – Pokrytí požadavku “kreslit assety, animace výbuchu, částicové efekty”
+
+---
+
+## 📅 Den 2 (zítra)
+
+| Čas (h)   | Úkol                                                                                                                                                                                                                                                     |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1,5 h** | **Audio**:<br>– Načti `tick.mp3` a `boom.mp3` přes `new Audio()`. Přehrávej `tick` při položení bomby, `boom` při výbuchu. Přidej podbarvení hudbou (loop).                                                                                              |
+| **2 h**   | **Responsivita & orientace**:<br>– `window.onresize` přepočítá `canvas.width/height` a `tileSize = min(w/cols,h/rows)`. Přepni mezi portrétem/landscape (přerámuj UI, pokud je třeba).                                                                   |
+| **2 h**   | **Dotykové ovládání**:<br>1) **Virtuální joystick**: kresli poloprůhledné kolo v rohu, na `touchmove` počítej vektor a mapuj ho na `player.vx/vy`.<br>2) **Tap-to-bomb**: na `touchend` mimo joystick dej bombu na nejbližší dlaždici k dotyku.          |
+| **1 h**   | **Rozšířené ukládání**:<br>– V `Score` přidej “Export” tlačítko, které stáhne JSON (`blob → download`). “Import” přes `<input type="file">`, načti JSON, mergeuj se `localStorage`.                                                                      |
+| **1,5 h** | **PWA & instalovatelnost**:<br>– Ujisti se, že `manifest.json` má všechny ikony + `start_url` + `display: standalone`.<br>– V `sw.js` cachuj `assets/`, `game.js`, `index.html`, fallback na offline.<br>– Otestuj “Přidat na plochu” v Chrome DevTools. |
+| **1 h**   | **Finální QA & ladění**:<br>– Projdi minimálně 3 úrovně na desktopu a mobilu, ověř textury, zvuky, dotyk, ukládání a offline režim.<br>– Fix drobné bugy, commit.                                                                                        |
+
+> **Stav po dni 2:**
+> – **Responsive + orientace** ✔️
+> – **Dotykové ovládání bez tlačítek** ✔️
+> – **Zvuky** ✔️
+> – **Export/Import skóre** ✔️
+> – **Instalovatelná PWA** ✔️
+
+---
+
+### Tipy na rychlé dokončení
+
+1. **Keep it simple**: použij jeden společný `ASSETS` objekt, abys nemusel importovat/destrukturovat všude zvlášť.
+2. **Hot-reload**: pokud máš dev server s live-reload, každou změnu okamžitě testuj na fyzickém telefonu (přes LAN).
+3. **Fallbacky**: pokud nestihneš particle systém, můžeš ho zakomentovat – hlavní je mít texture, animaci, zvuk, touch, PWA.
+
+S tímto plánem zvládneš v 48 hodin **všechny klíčové body** a dosáhneš minimálně **15 bodů**, ideálně **22 bodů** za plné pokrytí zadání. Držím palce!

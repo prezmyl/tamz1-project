@@ -12,6 +12,7 @@ const URLS_TO_CACHE = [
     './js/LevelManager.js',
     './js/levels.js',
     './js/Explosion.js',
+    './js/BombAnimation.js',
     './style.css'
 ];
 
