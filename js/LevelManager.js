@@ -5,6 +5,8 @@ import Player  from './Player.js';
 import Enemy   from './Enemy.js';
 import Score   from './Score.js';
 import Bomb    from './Bomb.js';
+import { refreshHighscoreList, showMenu} from '../game.js';
+
 const PLAYER_LIVES = 3;
 
 
@@ -52,7 +54,7 @@ export default class LevelManager {
             mapW, mapH              // dest w,h
         );
 
-        // 👉 NO this.map.draw() here any more
+
     }
 
 
@@ -94,25 +96,13 @@ export default class LevelManager {
     }
 
     endGame(victory) {
-        this.gameOver = true;
-        const ctx = this.ctx;
-        ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
-
+        // nejdřív ulož skóre
         if (victory) {
-            // zobraz High-Scores – nebo přesměruj na menu
             Score.saveHighScores({ name:'You', value: this.score.value });
-            const top = Score.loadHighScores();
-            ctx.fillStyle = 'white';
-            ctx.font = '24px Arial';
-            ctx.fillText('🎉 You Win! 🎉', 50, 50);
-            ctx.fillText('High Scores:', 50, 90);
-            top.forEach((e,i) => {
-                ctx.fillText(`${i+1}. ${e.name}: ${e.value}`, 50, 130 + i*30);
-            });
+            refreshHighscoreList();
+            showMenu('victory');
         } else {
-            ctx.fillStyle = 'red';
-            ctx.font = '32px Arial';
-            ctx.fillText('💀 Game Over 💀', ctx.canvas.width/2-100, ctx.canvas.height/2);
+            showMenu('gameover');
         }
     }
 

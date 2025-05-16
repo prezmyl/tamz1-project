@@ -1,3 +1,4 @@
+import { refreshHighscoreList } from '../game.js';
 
 export default class Score {
     /**
@@ -47,4 +48,51 @@ export default class Score {
         arr.sort((a, b) => b.value - a.value);
         localStorage.setItem('highscores', JSON.stringify(arr.slice(0, 10)));
     }
+
+    // Score.js
+
+    /** Přepíše celý seznam nejlepších skóre */
+    static setHighScores(arr) {
+        const top = arr
+            .sort((a,b)=> b.value - a.value)
+            .slice(0,10);
+        localStorage.setItem('highscores', JSON.stringify(top));
+    }
+
+    /** Vygeneruje a stáhne JSON se skóre */
+    static exportHighScores() {
+        const data = JSON.stringify(Score.loadHighScores(), null, 2);
+        const blob = new Blob([data], {type: 'application/json'});
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = 'highscores.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    }
+
+    /** Naimportuje ze souboru a merge-ne se stávajícím */
+    static importHighScores(file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                const existing = Score.loadHighScores();
+                // sloučíme, vyfiltrujeme duplicitní jména, setneme top10
+                const map = new Map();
+                [...existing, ...imported].forEach(ent=>{
+                    if (!map.has(ent.name) || map.get(ent.name).value < ent.value) {
+                        map.set(ent.name, ent);
+                    }
+                });
+                Score.setHighScores(Array.from(map.values()));
+                refreshHighscoreList();
+            } catch(err) {
+                console.error('error on import', err);
+            }
+        };
+        reader.readAsText(file);
+    }
+
 }

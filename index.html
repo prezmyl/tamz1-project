@@ -12,6 +12,33 @@
 </head>
 <body>
 
+<!-- index.html -->
+<div id="menu-container">
+    <!-- 2.1 Úvodní MENU -->
+    <div id="main-menu" class="menu">
+        <button id="btn-start">Start Game</button>
+        <button id="btn-quit-main">Quit</button>
+    </div>
+
+    <!-- 2.2 GAME OVER MENU -->
+    <div id="gameover-menu" class="menu hidden">
+        <h2>💀 Game Over 💀</h2>
+        <button id="btn-replay-lose">Play Again</button>
+        <button id="btn-quit-lose">Quit</button>
+    </div>
+
+    <!-- 2.3 VICTORY MENU -->
+    <div id="victory-menu" class="menu hidden">
+        <h2>🎉 You Win! 🎉</h2>
+        <h3>High Scores</h3>
+        <ol id="highscore-list"></ol>
+        <button id="btn-replay-win">Play Again</button>
+        <button id="btn-quit-win">Quit</button>
+        <button id="btn-export-scores">Export Scores</button>
+        <input type="file" id="import-scores" accept="application/json" />
+    </div>
+</div>
+
 
 <div id="game-container">
     <canvas id="gameCanvas" width="800" height="600"></canvas>

@@ -567,11 +567,14 @@ export default class Enemy {
         }
     }
 
-    static killAll(enemies, delayMs = 2000) {
+    static killAll(enemies, score, delayMs = 2000) {
         setTimeout(() => {
+            const count = enemies.length;
             enemies.splice(0, enemies.length);
+            score.update(count * 10);
         }, delayMs);
     }
+
 }
 
 /**

@@ -11,7 +11,7 @@ const HUE_ROTATIONS = {
 };
 export default class Bomb {
     constructor(xTile, yTile, map, owner, explosionTiles, timer) {
-        // xTile/yTile místa bomby
+        // xTile/yTile mista bomby
         this.x = xTile;
         this.y = yTile;
         this.active = true;

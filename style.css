@@ -6,21 +6,25 @@ body {
     align-items: center;
     height: 100vh;
 }
+
 #game-container {
     position: relative;
-    /* ideálně šířka a výzka canvasu, nebo max-width:100% pro responsivitu */
+    /* ideálně šířka a výška canvasu, nebo max-width:100% pro responsivitu */
 }
+
 canvas {
     display: block;       /* odstraní inline mezery */
     border: 2px solid #fff;
 }
+
+/* ————————— TOUCH CONTROLS ————————— */
 #touch-controls {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    pointer-events: none; /* overlay propusti všechny události kromě těch, kde je vnořené tlačítko */
+    pointer-events: none; /* overlay propustí všechny události kromě těch, kde je vnořené tlačítko */
 }
-/* zajistí, že jen tlacitka chytaji dotyk */
+/* zajistí, že jen tlačítka chytají dotyk */
 #touch-controls button {
     pointer-events: auto;
 }
@@ -32,9 +36,9 @@ canvas {
     width: 140px; height: 140px;
     display: grid;
     grid-template-areas:
-    ".    up    ."
-    "left  .  right"
-    ".   down   .";
+      ".    up    ."
+      "left  .  right"
+      ".   down   .";
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows:    1fr 1fr 1fr;
     gap: 5px;
@@ -50,9 +54,46 @@ canvas {
     opacity: 0.7;
     width: 100%; height: 100%;
 }
+
 #btn-bomb {
     position: absolute;
     bottom: 20px; right: 20px;
     font-size: 32px;
     opacity: 0.8;
+}
+
+/* ————————— MENU STYLES ————————— */
+#menu-container {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 1000;            /* menu držíme nad hrou */
+    pointer-events: auto;     /* zachytí všechny kliky */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.5); /* mírně ztmavené pozadí menu */
+}
+
+.menu {
+    background: rgba(0,0,0,0.8);
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    z-index: 1001;            /* tlačítka nad containerem */
+}
+
+.menu.hidden {
+    display: none;
+}
+
+.menu button {
+    margin: 8px;
+    padding: 10px 20px;
+    font-size: 18px;
+}
+
+/* hide whole menu container */
+#menu-container.hidden {
+    display: none !important;
 }

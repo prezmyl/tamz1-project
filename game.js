@@ -5,79 +5,138 @@ import Bomb         from './js/Bomb.js';
 import Player       from './js/Player.js';
 import Enemy        from './js/Enemy.js';
 import Explosion    from './js/Explosion.js';
+import Score        from './js/Score.js';
 
+// ——————————————————————————————————————————————————
+//  MENU HELPERS
+// ——————————————————————————————————————————————————
+export function showMenu(name) {
+
+    // nejprve ukaž celý overlay (aby v něm bylo co zobrazit)
+    document.getElementById('menu-container')
+        .classList.remove('hidden');
+    // pauza hlavního loopu
+    if (LM) LM.gameOver = true;
+
+    ['main','gameover','victory'].forEach(id => {
+        document.getElementById(id + '-menu')
+            .classList.toggle('hidden', id !== name);
+    });
+}
+
+export function refreshHighscoreList() {
+    const top = Score.loadHighScores();
+    const ol  = document.getElementById('highscore-list');
+    ol.innerHTML = '';
+    top.forEach((e,i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i+1}. ${e.name}: ${e.value}`;
+        ol.appendChild(li);
+    });
+}
+
+// ——————————————————————————————————————————————————
+//  BIND MENU BUTTONS
+// ——————————————————————————————————————————————————
+function bindMenuButtons() {
+    const startBtn       = document.getElementById('btn-start');
+    const quitMainBtn    = document.getElementById('btn-quit-main');
+    const replayLoseBtn  = document.getElementById('btn-replay-lose');
+    const quitLoseBtn    = document.getElementById('btn-quit-lose');
+    const replayWinBtn   = document.getElementById('btn-replay-win');
+    const quitWinBtn     = document.getElementById('btn-quit-win');
+    const exportBtn      = document.getElementById('btn-export-scores');
+    const importInput    = document.getElementById('import-scores');
+
+    console.log('Binding menu buttons:', {
+        startBtn, quitMainBtn,
+        replayLoseBtn, quitLoseBtn,
+        replayWinBtn, quitWinBtn,
+        exportBtn, importInput
+    });
+
+    startBtn.addEventListener('click', () => {
+        console.log('▶ Start clicked');
+        document.getElementById('menu-container')
+            .classList.add('hidden');
+        LM.gameOver = false;
+        lastFrameTime = performance.now();
+        requestAnimationFrame(gameLoop);
+    });
+
+    quitMainBtn.addEventListener('click', () => {
+        console.log('⏹ Quit (main) clicked');
+        window.location.reload();
+    });
+
+    replayLoseBtn.addEventListener('click', () => {
+        console.log('↺ Replay after lose clicked');
+        window.location.reload();
+    });
+    quitLoseBtn.addEventListener('click', () => {
+        console.log('⏹ Quit (lose) clicked');
+        window.location.reload();
+    });
+
+    replayWinBtn.addEventListener('click', () => {
+        console.log('↺ Replay after win clicked');
+        window.location.reload();
+    });
+    quitWinBtn.addEventListener('click', () => {
+        console.log('⏹ Quit (win) clicked');
+        window.location.reload();
+    });
+
+    exportBtn.addEventListener('click', () => {
+        console.log('⬇ Export scores clicked');
+        Score.exportHighScores();
+    });
+    importInput.addEventListener('change', e => {
+        console.log('⬆ Import scores change event');
+        const file = e.target.files[0];
+        if (file) {
+            Score.importHighScores(file);
+            // aktualizace seznamu v menu
+            refreshHighscoreList();
+        }
+    });
+}
+
+// zavěsíme vazby až po načtení DOM
+window.addEventListener('DOMContentLoaded', bindMenuButtons);
 
 // ——————————————————————————————————————————————————
 //  SETUP CANVAS + GLOBALS
 // ——————————————————————————————————————————————————
-const canvas        = document.getElementById('gameCanvas');
-const ctx           = canvas.getContext('2d');
-let LM;                      // LevelManager instance
-let lastFrameTime;           // for dt in gameLoop
+const canvas      = document.getElementById('gameCanvas');
+const ctx         = canvas.getContext('2d');
+let LM;            // LevelManager instance
+let lastFrameTime; // for dt in gameLoop
 
-// input state
-const keys = {
-    ArrowUp:    false,
-    ArrowDown:  false,
-    ArrowLeft:  false,
-    ArrowRight: false
-};
+const keys = { ArrowUp:false, ArrowDown:false, ArrowLeft:false, ArrowRight:false };
 
 // ——————————————————————————————————————————————————
-//  LISTEN FOR KEYBOARD
+//  KEYBOARD & TOUCH
 // ——————————————————————————————————————————————————
 document.addEventListener('keydown', e => {
-    if (e.code in keys) {
-        keys[e.code] = true;
-    }
+    if (e.code in keys) keys[e.code] = true;
     if (e.code === 'Space' && LM) {
-        Bomb.place(
-            LM.player,
-            LM.map,
-            LM.bombs,
-            LM.explosions,
-            LM.bombTimer
-        );
+        Bomb.place(LM.player, LM.map, LM.bombs, LM.explosions, LM.bombTimer);
     }
 });
-document.addEventListener('keyup', e => {
-    if (e.code in keys) keys[e.code] = false;
-});
+document.addEventListener('keyup', e => { if (e.code in keys) keys[e.code] = false; });
 
-// ——————————————————————————————————————————————————
-//  TOUCH CONTROLS (optional on‐screen buttons)
-// ——————————————————————————————————————————————————
-const touchMap = {
-    'btn-up':    'ArrowUp',
-    'btn-down':  'ArrowDown',
-    'btn-left':  'ArrowLeft',
-    'btn-right': 'ArrowRight'
-};
-Object.entries(touchMap).forEach(([btnId, key]) => {
-    const btn = document.getElementById(btnId);
+const touchMap = { 'btn-up':'ArrowUp','btn-down':'ArrowDown','btn-left':'ArrowLeft','btn-right':'ArrowRight' };
+Object.entries(touchMap).forEach(([id,key])=>{
+    const btn = document.getElementById(id);
     if (!btn) return;
-    btn.addEventListener('touchstart', e => {
-        e.preventDefault();
-        keys[key] = true;
-    }, { passive: false });
-    btn.addEventListener('touchend', e => {
-        e.preventDefault();
-        keys[key] = false;
-    }, { passive: false });
+    btn.addEventListener('touchstart', e=>{ e.preventDefault(); keys[key]=true; }, {passive:false});
+    btn.addEventListener('touchend',   e=>{ e.preventDefault(); keys[key]=false; },{passive:false});
 });
 const bombBtn = document.getElementById('btn-bomb');
-if (bombBtn) {
-    bombBtn.addEventListener('touchstart', e => {
-        e.preventDefault();
-        if (LM) Bomb.place(
-            LM.player,
-            LM.map,
-            LM.bombs,
-            LM.explosions,
-            LM.bombTimer
-        );
-    }, { passive: false });
-}
+if (bombBtn) bombBtn.addEventListener('touchstart', e=>{ e.preventDefault();
+    if (LM) Bomb.place(LM.player,LM.map,LM.bombs,LM.explosions,LM.bombTimer);
+},{passive:false});
 
 // ——————————————————————————————————————————————————
 //  MAIN GAME LOOP
@@ -85,54 +144,35 @@ if (bombBtn) {
 function gameLoop(now) {
     if (LM.gameOver) return;
 
-
-
     const dt = now - lastFrameTime;
     lastFrameTime = now;
 
-    // 1) UPDATE
+    // UPDATE
     LM.player.update(dt, LM.map, keys);
-    LM.enemies.forEach(e => e.update(dt));
+    LM.enemies.forEach(e=>e.update(dt));
+    //Enemy.killAll(LM.enemies, LM.score, 2000);
 
-//KILL all -> comment in to stop automatic self destruction
 
-    Enemy.killAll(LM.enemies,2000);
-
-    // eliminate any enemies hit by explosions
-    for (let i = LM.enemies.length - 1; i >= 0; i--) {
+    // collision + life loss
+    for (let i=LM.enemies.length-1;i>=0;i--){
         if (LM.enemies[i].isHitByExplosion(LM.explosions)) {
-            LM.enemies.splice(i, 1);
+            LM.enemies.splice(i,1);
             LM.score.update(10);
         }
     }
-    // 1.5) Did the player get caught in an explosion?
-    const hit = LM.explosions.some(e =>
-        e.xTile === LM.player.xTile && e.yTile === LM.player.yTile
-    );
+    const hit = LM.explosions.some(e=>e.xTile===LM.player.xTile && e.yTile===LM.player.yTile);
     if (hit && !LM.player.isInvulnerable(now)) {
-        // lose a life
         LM.score.lives--;
-        // set invulnerability
-        LM.player.invulnerableUntil = now + 2000;
-        // reset player to start
-        LM.player.xTile = LM.playerStart.x;
-        LM.player.yTile = LM.playerStart.y;
+        LM.player.invulnerableUntil=now+2000;
+        LM.player.xTile=LM.playerStart.x;
+        LM.player.yTile=LM.playerStart.y;
         LM.player.resetInterpolation();
-
-        // optionally clear bombs/explosions so player doesn’t immediately die again
-        LM.bombs.length = 0;
-//    LM.explosions.length = 0;
-        // game over?
-        if (LM.score.lives <= 0) {
-            return LM.endGame(false);
-        }
+        LM.bombs.length=0;
+        if (LM.score.lives<=0) return LM.endGame(false);
     }
 
-
-    // if level clear, advance
-    if (LM.enemies.length === 0 &&
-        LM.bombs.length    === 0 &&
-        LM.explosions.length === 0) {
+    // level clear
+    if (LM.enemies.length===0 && LM.bombs.length===0 && LM.explosions.length===0) {
         LM.next();
         if (LM.gameOver) return;
         onResize();
@@ -140,42 +180,29 @@ function gameLoop(now) {
         return;
     }
 
-    // 2) DRAW
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // DRAW
+    ctx.clearRect(0,0,canvas.width,canvas.height);
     LM.draw();
-
-    // 2) translate to map area & draw the world
     ctx.save();
-    ctx.translate(LM.offsetX, LM.offsetY);
-
-    // draw the tilemap (including break animations)
+    ctx.translate(LM.offsetX,LM.offsetY);
     LM.map.draw(ctx);
 
-    // bombs (cleanup inactive, then update+draw)
-    for (let i = LM.bombs.length - 1; i >= 0; i--) {
-        if (!LM.bombs[i].active) LM.bombs.splice(i, 1);
-    }
-    LM.bombs.forEach(b => {
-        b.update(dt, now);
-        b.draw(ctx, LM.map.tileSize, now);
-    });
+    // bombs
+    for (let i=LM.bombs.length-1;i>=0;i--) if (!LM.bombs[i].active) LM.bombs.splice(i,1);
+    LM.bombs.forEach(b=>{ b.update(dt,now); b.draw(ctx,LM.map.tileSize,now); });
 
     // player & enemies
     LM.player.draw(ctx);
-    LM.enemies.forEach(e => e.draw(ctx, LM.map.tileSize));
+    LM.enemies.forEach(e=>e.draw(ctx,LM.map.tileSize));
 
-    // explosions (update+draw & cleanup)
-    for (let i = LM.explosions.length - 1; i >= 0; i--) {
-        const ex = LM.explosions[i];
-        ex.draw(ctx, now);
-        if (ex.isDone(now)) {
-            LM.explosions.splice(i, 1);
-        }
+    // explosions
+    for (let i=LM.explosions.length-1;i>=0;i--){
+        const ex=LM.explosions[i];
+        ex.draw(ctx,now);
+        if (ex.isDone(now)) LM.explosions.splice(i,1);
     }
 
     ctx.restore();
-
-    // score overlay
     LM.score.draw(ctx);
 
     requestAnimationFrame(gameLoop);
@@ -184,170 +211,75 @@ function gameLoop(now) {
 // ——————————————————————————————————————————————————
 //  ASSET LOADING
 // ——————————————————————————————————————————————————
-
-// —————————— Images ——————————
 const playerSheet = new Image();
-playerSheet.src   = 'assets/Atomic_Bomberman_Green.png';
+const tilesImg    = new Image();
+const fieldsImg   = new Image();
+playerSheet.onload = onAssetLoad; playerSheet.src = 'assets/Atomic_Bomberman_Green.png';
+tilesImg.onload    = onAssetLoad;    tilesImg.src    = 'assets/Atomic_Bomberman_Tiles.png';
+fieldsImg.onload   = onAssetLoad;    fieldsImg.src   = 'assets/Atomic_Bomberman_Fields.png';
 
-const tilesImg = new Image();
-tilesImg.src   = 'assets/Atomic_Bomberman_Tiles.png';  // from your import
-
-const fieldsImg = new Image();
-fieldsImg.src   = 'assets/Atomic_Bomberman_Fields.png';
-
-let assetsToLoad = 3;
-function onAssetLoad() {
-    if (--assetsToLoad === 0) initGame();
+let assetsToLoad=3;
+function onAssetLoad(){
+    if (--assetsToLoad===0) initGame();
 }
 
-
-playerSheet.onload = onAssetLoad;
-tilesImg.onload    = onAssetLoad;
-fieldsImg.onload   = onAssetLoad;
-
-// —————————— Sound ——————————
+// ——————————————————————————————————————————————————
+//  AUDIO
+// ——————————————————————————————————————————————————
 export const tickSound = new Audio('assets/sounds/tick.ogg');
 export const boomSound = new Audio('assets/sounds/boom.ogg');
-// Optional: background loop
-const bgMusic   = new Audio('assets/sounds/bg.ogg');
-bgMusic.loop    = true;
-bgMusic.volume  = 0.2;   // dial it down a bit
-
+const bgMusic = new Audio('assets/sounds/bg.ogg');
+bgMusic.loop   = true; bgMusic.volume = 0.2;
 
 // ——————————————————————————————————————————————————
 //  INITIALIZE EVERYTHING
 // ——————————————————————————————————————————————————
 function initGame() {
-    // 1) assign our sprite‐sheet to Player/Enemy/Bomb
     Player.sheet = playerSheet;
     Enemy.sheet  = playerSheet;
     Bomb.sheet   = playerSheet;
 
-    // 2) create the LevelManager (passing in the tileset)
     LM = new LevelManager(ctx, tilesImg, fieldsImg);
     LM.load(0);
+    LM.gameOver = true;
 
-    // 3) now that we know tileSize, patch Player & Enemies
-    const ts = LM.map.tileSize;
-    LM.player.tileSize = ts;
-    LM.player.x = LM.player.xTile * ts;
-    LM.player.y = LM.player.yTile * ts;
-    LM.enemies.forEach(e => e.tileSize = ts);
-
-    // START background music *after* user interaction if needed
-    // defer bgMusic until first user gesture
-    const startBG = () => {
-        bgMusic.play().catch(()=>{});
-        // remove the listener after first use
-        window.removeEventListener('keydown', startBG);
-        window.removeEventListener('pointerdown', startBG);
-    };
-    window.addEventListener('keydown', startBG);
-    window.addEventListener('pointerdown', startBG);
-
-    // 4) start the loop
-    lastFrameTime = performance.now();
-    // setup responsiveness
+    // sizing & start menu
     window.addEventListener('resize', onResize);
     onResize();
-    requestAnimationFrame(gameLoop);
+    lastFrameTime = performance.now();
+    showMenu('main');
 }
-
 
 // ——————————————————————————————————————————————————
 //  RESIZING
 // ——————————————————————————————————————————————————
-// Call this any time the window size changes (and once at startup)
 function onResize() {
-    // 1) Fill the window
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    canvas.width  = w;
-    canvas.height = h;
+    const w=window.innerWidth, h=window.innerHeight;
+    canvas.width=w; canvas.height=h;
+    const cols=LM.map.cols, rows=LM.map.rows;
+    const ts = (Math.floor(w/cols)*rows <= h) ? Math.floor(w/cols) : Math.floor(h/rows);
+    LM.map.tileSize=ts; LM.player.tileSize=ts; LM.player.resetInterpolation();
+    LM.enemies.forEach(e=>{ e.tileSize=ts; e.resetInterpolation(); });
+    LM.bombs.forEach(b=> b.anim.tileSize=ts);
+    LM.explosions.forEach(ex=> ex.tileSize=ts);
 
+    const mapW=cols*ts, mapH=rows*ts;
+    LM.offsetX=Math.floor((w-mapW)/2); LM.offsetY=Math.floor((h-mapH)/2);
 
+    if (w>h) { LM.score.x=10; LM.score.y=30; }
+    else    { LM.score.x=LM.offsetX+10; LM.score.y=Math.max(20,LM.offsetY-40); }
+    LM.score.level=LM.current+1;
 
-    // 2) Compute two candidate tileSizes
-    const cols = LM.map.cols;
-    const rows = LM.map.rows;
-    const tsByW = Math.floor(w / cols);   // would fill width exactly
-    const tsByH = Math.floor(h / rows);   // would fill height exactly
-
-    // 3) Pick the largest that won’t overflow vertically
-    let ts;
-    if (tsByW * rows <= h) {
-        // we *can* fill horizontally without vertical scroll
-        ts = tsByW;
+    // adjust touch-controls
+    const dpad=document.querySelector('.dpad');
+    const bomb=document.getElementById('btn-bomb');
+    if (w>h) {
+        dpad.style.transform='scale(1)'; bomb.style.transform='scale(1.6)';
+        dpad.style.left='30px'; dpad.style.bottom='40px';
+        bomb.style.right='50px'; bomb.style.bottom='90px';
     } else {
-        // otherwise, fit to height and leave horizontal padding
-        ts = tsByH;
-    }
-
-    // 4) Apply the chosen tileSize everywhere
-    LM.map.tileSize    = ts;
-    LM.player.tileSize = ts;
-    LM.player.resetInterpolation();
-    LM.enemies.forEach(e => {
-        e.tileSize = ts;
-        e.resetInterpolation();
-    });
-    LM.bombs.forEach(b => {
-        b.anim.tileSize = ts;
-    });
-    LM.explosions.forEach(ex => {
-        ex.tileSize = ts;
-    })
-
-    // 5) Compute centering offsets
-    const mapW = cols * ts;
-    const mapH = rows * ts;
-    LM.offsetX = Math.floor((w - mapW) / 2);
-    LM.offsetY = Math.floor((h - mapH) / 2);
-
-    // 6) (Optional) reposition your HUD/score
-    // 6) reposition your HUD: Score + Level
-    //   landscape → in the left black bar (centered horizontally there)
-    //   portrait  → above the map, as before
-    if (w > h) {
-        // landscape: left bar is width = offsetX
-        LM.score.x = 10;
-        LM.score.y = 30;
-    } else {
-        // portrait: place just above the map
-        LM.score.x = LM.offsetX + 10;
-        LM.score.y = Math.max(20, LM.offsetY - 40);
-    }
-    // update the level number for Score.draw()
-    LM.score.level = LM.current + 1;
-
-    // 7) tweak touch‐control layout per orientation
-    const dpad   = document.querySelector('.dpad');
-    const bomb   = document.getElementById('btn-bomb');
-    if (window.innerWidth > window.innerHeight) {
-        // ── LANDSCAPE ── keep default size
-        dpad.style.transform       = 'scale(1)';
-        bomb.style.transform       = 'scale(1.6)';
-        bomb.style.fontSize        = '';
-        // landscape margins
-        dpad.style.left   = '30px';
-        dpad.style.bottom = '40px';
-        bomb.style.right  = '50px';
-        bomb.style.bottom = '90px';
-    } else {
-        // ── PORTRAIT ── bigger & pulled further in
-        dpad.style.transform       = 'scale(2.4)';
-        bomb.style.transform       = 'scale(2.4)';
-        bomb.style.fontSize        = '48px';
-        // double the inset in portrait
-        dpad.style.left   = '120px';
-        dpad.style.bottom = '200px';
-        bomb.style.right  = '160px';
-        bomb.style.bottom = '200px';
+        dpad.style.transform='scale(2.4)'; bomb.style.transform='scale(2.4)';
+        dpad.style.left='120px'; dpad.style.bottom='200px';
+        bomb.style.right='160px'; bomb.style.bottom='200px';
     }
 }
-
-
-
-
-
-
