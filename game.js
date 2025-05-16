@@ -291,6 +291,31 @@ function onResize() {
     }
     // update the level number for Score.draw()
     LM.score.level = LM.current + 1;
+
+    // 7) tweak touch‐control layout per orientation
+    const dpad   = document.querySelector('.dpad');
+    const bomb   = document.getElementById('btn-bomb');
+    if (window.innerWidth > window.innerHeight) {
+        // ── LANDSCAPE ── keep default size
+        dpad.style.transform       = 'scale(1)';
+        bomb.style.transform       = 'scale(1.6)';
+        bomb.style.fontSize        = '';
+        // landscape margins
+        dpad.style.left   = '30px';
+        dpad.style.bottom = '40px';
+        bomb.style.right  = '50px';
+        bomb.style.bottom = '90px';
+    } else {
+        // ── PORTRAIT ── bigger & pulled further in
+        dpad.style.transform       = 'scale(2.4)';
+        bomb.style.transform       = 'scale(2.4)';
+        bomb.style.fontSize        = '48px';
+        // double the inset in portrait
+        dpad.style.left   = '120px';
+        dpad.style.bottom = '200px';
+        bomb.style.right  = '160px';
+        bomb.style.bottom = '200px';
+    }
 }
 
 

@@ -27,6 +27,7 @@ canvas {
 
 .dpad {
     position: absolute;
+    transition: transform 0.2s;
     bottom: 10px; left: 10px;
     width: 140px; height: 140px;
     display: grid;
