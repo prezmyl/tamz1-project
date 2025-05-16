@@ -92,6 +92,9 @@ function gameLoop(now) {
     LM.player.update(dt, LM.map, keys);
     LM.enemies.forEach(e => e.update(dt));
 
+    //KILL all -> comment in to stop automatic self destruction
+    //LM.enemies.forEach(e => {e.killAll(2000)})
+    Enemy.killAll(LM.enemies,2000);
     // eliminate any enemies hit by explosions
     for (let i = LM.enemies.length - 1; i >= 0; i--) {
         if (LM.enemies[i].isHitByExplosion(LM.explosions)) {
@@ -111,6 +114,7 @@ function gameLoop(now) {
 
     // 2) DRAW
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    LM.draw();
 
     // draw the tilemap (including break animations)
     LM.map.draw(ctx);
@@ -152,12 +156,16 @@ playerSheet.src   = 'assets/Atomic_Bomberman_Green.png';
 const tilesImg = new Image();
 tilesImg.src   = 'assets/Atomic_Bomberman_Tiles.png';  // from your import
 
+const fieldsImg = new Image();
+fieldsImg.src   = 'assets/Atomic_Bomberman_Fields.png';
+
 let assetsToLoad = 2;
 function onAssetLoad() {
     if (--assetsToLoad === 0) initGame();
 }
 playerSheet.onload = onAssetLoad;
 tilesImg.onload    = onAssetLoad;
+fieldsImg.onload   = onAssetLoad;
 
 // ——————————————————————————————————————————————————
 //  INITIALIZE EVERYTHING
@@ -169,7 +177,7 @@ function initGame() {
     Bomb.sheet   = playerSheet;
 
     // 2) create the LevelManager (passing in the tileset)
-    LM = new LevelManager(ctx, tilesImg);
+    LM = new LevelManager(ctx, tilesImg, fieldsImg);
     LM.load(0);
 
     // 3) now that we know tileSize, patch Player & Enemies

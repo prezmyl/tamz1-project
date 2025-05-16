@@ -7,16 +7,47 @@ import Score   from './Score.js';
 import Bomb    from './Bomb.js';
 
 export default class LevelManager {
-    constructor(ctx, tilesImg) {
+    constructor(ctx, tilesImg, fieldsImg) {
         this.ctx = ctx;
         this.score = new Score(0);
         this.current = 0;
         this.gameOver = false;
         this.tilesImg = tilesImg;
+        this.fieldsImg = fieldsImg;
+
+        // these constants come from your fields.png layout
+        this.TOP_BORDER_Y  = 46;
+        this.FIELD_W     = 640;
+        this.FIELD_H     = 480 - this.TOP_BORDER_Y;
+        this.FIELD_BORDER= 3;
+
+    }
+
+    draw() {
+        // 1) draw the background
+        const sx = this.FIELD_BORDER
+            + this.bgCol * (this.FIELD_W + this.FIELD_BORDER);
+        const sy = this.FIELD_BORDER + this.TOP_BORDER_Y
+            + this.bgRow * (this.FIELD_H + this.FIELD_BORDER + this.TOP_BORDER_Y);
+
+        // stretch the 640×480 block to fill your game area
+        this.ctx.drawImage(
+            this.fieldsImg,
+            sx, sy, this.FIELD_W, this.FIELD_H,
+            0, 0,
+            this.map.cols * this.map.tileSize,
+            this.map.rows * this.map.tileSize
+        );
+
+        // 2) draw the map, bombs, players, etc…
+        this.map.draw(this.ctx);
+        // … rest of your draw logic …
     }
 
     load(levelIndex) {
         const lvl = levels[levelIndex];
+        this.bgCol = lvl.bgCol;
+        this.bgRow = lvl.bgRow;
         this.map    = new GameMap(lvl.mapData, lvl.mapData[0].length, lvl.mapData.length, lvl.tileSize, this.bombs, this.tilesImg);
         this.player = new Player(lvl.playerStart.x, lvl.playerStart.y, lvl.tileSize);
         this.bombs  = [];

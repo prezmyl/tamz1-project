@@ -548,6 +548,12 @@ export default class Enemy {
             default:      return   0;
         }
     }
+
+    static killAll(enemies, delayMs = 2000) {
+        setTimeout(() => {
+            enemies.splice(0, enemies.length);
+        }, delayMs);
+    }
 }
 
 /**

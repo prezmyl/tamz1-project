@@ -57,7 +57,7 @@ export default class GameMap {
             for (let x=0; x<this.cols; x++) {
                 const t = this.data[y][x];
                 // floor (0) we skip and let background show
-                if (t === 0) continue;
+                if (t === 0) continue;  //if not bg pic is presented -> delete
 
                 const src = this.tileSrc[t];
                 ctx.drawImage(
