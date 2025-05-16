@@ -24,7 +24,7 @@
 │   ├── levels.js
 │   ├── Player.js
 │   └── Score.js
-├── konzultace.txt
+├── kozultace_old.txt
 ├── manifest.json
 ├── node_modules
 ├── obecne_informace_project.txt

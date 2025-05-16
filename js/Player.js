@@ -18,7 +18,7 @@ export default class Player {
      * @param {number} yTile počáteční řádek v dlaždicích
      * @param {number} tileSize velikost dlaždice v pixelech
      */
-    constructor(xTile, yTile, tileSize) {
+    constructor(xTile, yTile, tileSize, lives) {
         // logika mapy (dlaždice)
         this.xTile = xTile;
         this.yTile = yTile;
@@ -34,6 +34,9 @@ export default class Player {
         this.dir       = 'down';
         this.frame     = 0;
         this._animTime = 0;
+
+        this.invulnerableUntil = 0;
+        this.lives = lives;
     }
 
     /**
@@ -117,6 +120,10 @@ export default class Player {
         this.moving  = false;
         this.frame   = 0;
         this._animTime = 0;
+    }
+
+    isInvulnerable(now) {
+        return now < this.invulnerableUntil;
     }
 
 }

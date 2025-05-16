@@ -1,5 +1,5 @@
 Zpetna vazba kantora
-- soucasny stav je tak na 10 z 30. Potrebuju minimalne 15, optimalne 22
+- tehdejis stav je tak na 10 z 30. Potrebuju minimalne 15, optimalne 22
 - pry lepsi bylo pouzit React a nejaky herni framework jako phaser
 - aplikace by se mela prizpusobovat velikosti obrazovky a otoceni telefonu
 - mel bych kreslit textury -> vykreslovat assety(bomba, zed, hrac,..), animece vybuchu

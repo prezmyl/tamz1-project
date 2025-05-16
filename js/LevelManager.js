@@ -5,11 +5,14 @@ import Player  from './Player.js';
 import Enemy   from './Enemy.js';
 import Score   from './Score.js';
 import Bomb    from './Bomb.js';
+const PLAYER_LIVES = 3;
+
+
 
 export default class LevelManager {
     constructor(ctx, tilesImg, fieldsImg) {
         this.ctx = ctx;
-        this.score = new Score(0);
+        this.score = new Score(0, PLAYER_LIVES);
         this.current = 0;
         this.gameOver = false;
         this.tilesImg = tilesImg;
@@ -29,8 +32,8 @@ export default class LevelManager {
         // figure out which 640×480 chunk to slice from fieldsImg
         const sx = this.FIELD_BORDER + this.bgCol * (this.FIELD_W + this.FIELD_BORDER);
         const sy = this.FIELD_BORDER
-            + (this.bgRow === 0 ? this.TOP_BORDER_Y : 0)
-            + this.bgRow * (this.FIELD_H + this.FIELD_BORDER);
+            + this.TOP_BORDER_Y
+            + this.bgRow * (this.FIELD_H + this.FIELD_BORDER + this.TOP_BORDER_Y);
 
         // how big is our logical map in pixels?
         const mapW = this.map.cols * this.map.tileSize;
@@ -57,17 +60,23 @@ export default class LevelManager {
         const lvl = levels[levelIndex];
         this.bgCol = lvl.bgCol;
         this.bgRow = lvl.bgRow;
+
         this.map    = new GameMap(lvl.mapData, lvl.mapData[0].length, lvl.mapData.length, lvl.tileSize, this.bombs, this.tilesImg);
-        this.player = new Player(lvl.playerStart.x, lvl.playerStart.y, lvl.tileSize);
+
+        this.player = new Player(lvl.playerStart.x, lvl.playerStart.y, lvl.tileSize, PLAYER_LIVES);
+        this.playerStart = { x: this.player.xTile, y: this.player.yTile };
+
         this.bombs  = [];
         this.map.bombs = this.bombs
         this.explosions = [];
+        this.bombTimer = lvl.bombTimer;
+
         this.enemies = lvl.enemyStarts.map(pos =>
             new Enemy(pos.x, pos.y, 'blue',
                 this.map, this.bombs, this.explosions, this.player,
                 lvl.enemyMoveDelay, lvl.bombTimer, this.map.tileSize)
         );
-        this.bombTimer = lvl.bombTimer;
+
         this.current = levelIndex;
     }
 
@@ -80,25 +89,34 @@ export default class LevelManager {
             console.log("→ loaded, new current:", this.current);
         } else {
             // TODO: end-of-game  –> zobraz menu / highscore
-            this.gameOver = true;
-            console.log("→ game over");
-            // 1) save svore
-            Score.saveHighScores({ name: 'Player', value: this.score.value });
-            // 2) Nactu top10
-            const top = Score.loadHighScores();
-            // 3) Vykreslim canvas
-            const ctx = this.ctx;
-            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-            ctx.fillStyle = 'white';
-            ctx.font = '24px Arial';
-            ctx.fillText('🎉 Game Over! 🎉', 50, 50);
-            ctx.fillText('High Scores:', 50, 90);
-            top.forEach((e, i) => {
-                ctx.fillText(`${i+1}. ${e.name}: ${e.value}`, 50, 130 + i * 30);
-            });
-            // 4) Ukonceni smycky <– no more requestAnimationFrame
+            this.endGame(true);
         }
     }
+
+    endGame(victory) {
+        this.gameOver = true;
+        const ctx = this.ctx;
+        ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+
+        if (victory) {
+            // zobraz High-Scores – nebo přesměruj na menu
+            Score.saveHighScores({ name:'You', value: this.score.value });
+            const top = Score.loadHighScores();
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Arial';
+            ctx.fillText('🎉 You Win! 🎉', 50, 50);
+            ctx.fillText('High Scores:', 50, 90);
+            top.forEach((e,i) => {
+                ctx.fillText(`${i+1}. ${e.name}: ${e.value}`, 50, 130 + i*30);
+            });
+        } else {
+            ctx.fillStyle = 'red';
+            ctx.font = '32px Arial';
+            ctx.fillText('💀 Game Over 💀', ctx.canvas.width/2-100, ctx.canvas.height/2);
+        }
+    }
+
+
 
     scheduleEnemyKill(enemy, deathTime) {
         setTimeout(() => {

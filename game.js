@@ -85,6 +85,8 @@ if (bombBtn) {
 function gameLoop(now) {
     if (LM.gameOver) return;
 
+
+
     const dt = now - lastFrameTime;
     lastFrameTime = now;
 
@@ -93,8 +95,8 @@ function gameLoop(now) {
     LM.enemies.forEach(e => e.update(dt));
 
 //KILL all -> comment in to stop automatic self destruction
-    //LM.enemies.forEach(e => {e.killAll(2000)})
-//    Enemy.killAll(LM.enemies,2000);
+
+    Enemy.killAll(LM.enemies,2000);
 
     // eliminate any enemies hit by explosions
     for (let i = LM.enemies.length - 1; i >= 0; i--) {
@@ -103,12 +105,36 @@ function gameLoop(now) {
             LM.score.update(10);
         }
     }
+    // 1.5) Did the player get caught in an explosion?
+    const hit = LM.explosions.some(e =>
+        e.xTile === LM.player.xTile && e.yTile === LM.player.yTile
+    );
+    if (hit && !LM.player.isInvulnerable(now)) {
+        // lose a life
+        LM.score.lives--;
+        // set invulnerability
+        LM.player.invulnerableUntil = now + 2000;
+        // reset player to start
+        LM.player.xTile = LM.playerStart.x;
+        LM.player.yTile = LM.playerStart.y;
+        LM.player.resetInterpolation();
+
+        // optionally clear bombs/explosions so player doesn’t immediately die again
+        LM.bombs.length = 0;
+//    LM.explosions.length = 0;
+        // game over?
+        if (LM.score.lives <= 0) {
+            return LM.endGame(false);
+        }
+    }
+
 
     // if level clear, advance
     if (LM.enemies.length === 0 &&
         LM.bombs.length    === 0 &&
         LM.explosions.length === 0) {
         LM.next();
+        if (LM.gameOver) return;
         onResize();
         requestAnimationFrame(gameLoop);
         return;
@@ -228,7 +254,9 @@ function initGame() {
 }
 
 
-
+// ——————————————————————————————————————————————————
+//  RESIZING
+// ——————————————————————————————————————————————————
 // Call this any time the window size changes (and once at startup)
 function onResize() {
     // 1) Fill the window
@@ -317,6 +345,8 @@ function onResize() {
         bomb.style.bottom = '200px';
     }
 }
+
+
 
 
 

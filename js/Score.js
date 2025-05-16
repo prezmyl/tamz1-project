@@ -3,11 +3,12 @@ export default class Score {
     /**
      * @param {number} initialValue  Pocat. score (vychozi je 0)
      */
-    constructor(initialValue = 0) {
+    constructor(initialValue = 0, lives) {
         this.value = initialValue;
         this.x = 10;
-        this.y = 25;
+        this.y = 20;
         this.level = 1;
+        this.lives = lives;
     }
 
     /**
@@ -27,6 +28,9 @@ export default class Score {
         ctx.font = "20px Arial";
         ctx.fillText(`Score: ${this.value}`, this.x, this.y);
         ctx.fillText(`Level: ${this.level}`, this.x, this.y + 20);
+        if (this.lives !== undefined) {
+            ctx.fillText(`Lives: ${this.lives}`, this.x, this.y + 40);
+        }
     }
 
 

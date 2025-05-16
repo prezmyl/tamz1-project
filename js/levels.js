@@ -25,8 +25,8 @@ export const levels = [
         bombTimer: 2000,      // ms do exploze
         enemyMoveDelay: 500,  // ms mezi nahodnymi kroky
 
-        bgCol: 0,
-        bgRow: 0
+        bgCol: 1,
+        bgRow: 1
     },
     {
         name: "Level 2",
