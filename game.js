@@ -200,9 +200,15 @@ function initGame() {
     LM.enemies.forEach(e => e.tileSize = ts);
 
     // START background music *after* user interaction if needed
-    bgMusic.play().catch(() => {
-        // some browsers require a user gesture; you can defer until first key/touch
-    });
+    // defer bgMusic until first user gesture
+    const startBG = () => {
+        bgMusic.play().catch(()=>{});
+        // remove the listener after first use
+        window.removeEventListener('keydown', startBG);
+        window.removeEventListener('pointerdown', startBG);
+    };
+    window.addEventListener('keydown', startBG);
+    window.addEventListener('pointerdown', startBG);
 
     // 4) start the loop
     lastFrameTime = performance.now();
