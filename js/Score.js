@@ -12,18 +12,12 @@ export default class Score {
         this.lives = lives;
     }
 
-    /**
-     * Prictek aktualnimu skore zadanou hodnotu
-     * @param {number} amount  Hodnota k pridani (i zaporna)
-     */
+
     update(amount) {
         this.value += amount;
     }
 
-    /**
-     * Vykresli skore na canvas
-     * @param {CanvasRenderingContext2D} ctx
-     */
+
     draw(ctx) {
         ctx.fillStyle = "white";
         ctx.font = "20px Arial";
@@ -51,7 +45,7 @@ export default class Score {
 
     // Score.js
 
-    /** Přepíše celý seznam nejlepších skóre */
+
     static setHighScores(arr) {
         const top = arr
             .sort((a,b)=> b.value - a.value)
@@ -59,7 +53,7 @@ export default class Score {
         localStorage.setItem('highscores', JSON.stringify(top));
     }
 
-    /** Vygeneruje a stáhne JSON se skóre */
+
     static exportHighScores() {
         const data = JSON.stringify(Score.loadHighScores(), null, 2);
         const blob = new Blob([data], {type: 'application/json'});
@@ -72,14 +66,14 @@ export default class Score {
         a.remove();
     }
 
-    /** Naimportuje ze souboru a merge-ne se stávajícím */
+
     static importHighScores(file) {
         const reader = new FileReader();
         reader.onload = e => {
             try {
                 const imported = JSON.parse(e.target.result);
                 const existing = Score.loadHighScores();
-                // sloučíme, vyfiltrujeme duplicitní jména, setneme top10
+
                 const map = new Map();
                 [...existing, ...imported].forEach(ent=>{
                     if (!map.has(ent.name) || map.get(ent.name).value < ent.value) {

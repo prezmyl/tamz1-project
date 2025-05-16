@@ -1,7 +1,7 @@
-// BombAnimation.js
+
 
 export default class BombAnimation {
-    // -- your measured per‐frame sizes --
+
     static FRAME_SPECS = [
         { sw: 36, sh: 36 },
         { sw: 35, sh: 34 },
@@ -15,12 +15,12 @@ export default class BombAnimation {
         { sw: 22, sh: 21 }
     ];
 
-    // -- where does the very first frame live in your big PNG? --
+
     static FIRST_FRAME_X = 2;
     static FIRST_FRAME_Y = 3246;
-    static GRID         = 2;   // px between frames
+    static GRID         = 2;
 
-    // build a small table that includes the computed sx,sy
+
     static FRAME_INFO = (() => {
         const out = [];
         let x = BombAnimation.FIRST_FRAME_X;
@@ -58,11 +58,11 @@ export default class BombAnimation {
             }
         ctx.drawImage(
             this.sheet,
-            sx, sy,         // top-left corner of this frame in atlas
-            sw, sh,         // measured size
+            sx, sy,
+            sw, sh,
             this.xTile * this.tileSize,
             this.yTile * this.tileSize,
-            this.tileSize,  // stretch to one game‐tile
+            this.tileSize,
             this.tileSize
         );
         ctx.restore();

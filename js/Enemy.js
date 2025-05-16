@@ -4,14 +4,14 @@ import Bomb from './Bomb.js';
 import { tickSound, boomSound } from '../game.js';
 
 // ————— Konstanty pro animaci a pohyb —————
-const TOP_BORDER       = 20;    // pixely nad první řadou buněk
-const GRID_LINE        = 2;     // pixely mezi buňkami
-const FRAME_W          = 110;   // šířka jedné buňky
-const FRAME_H          = 110;   // výška jedné buňky
-const MOVE_SPEED       = 100;    // px/s – základní rychlost pohybu
-const EVADE_SPEED_MULT = 2;     // násobek rychlosti při útěku
-const MOVE_DELAY       = 500;   // ms mezi normálními kroky
-const ANIM_DELAY       = 150;   // ms mezi snímky animace
+const TOP_BORDER       = 20;
+const GRID_LINE        = 2;
+const FRAME_W          = 110;
+const FRAME_H          = 110;
+const MOVE_SPEED       = 100;
+const EVADE_SPEED_MULT = 2;
+const MOVE_DELAY       = 500;
+const ANIM_DELAY       = 150;
 const ATTACK_RANGE = 5;
 const DIRECTIONS       = [
     { dir:'up', dx:0, dy:-1 },
@@ -20,13 +20,13 @@ const DIRECTIONS       = [
     { dir:'right', dx:1, dy:0 }
 ];
 
-// animace 11 snímků na každý směr ve sheetu
+
 const FRAMES_PER_DIR = { down: 11, left: 11, right: 11, up: 11 };
-// který řádek v sheetu pro který směr
+
 const ROW_FOR_DIR    = { down: 0, left: 6, right: 2, up: 4 };
 
 export default class Enemy {
-    static sheet;  // přiřadí game.js
+    static sheet;  // priradi se z game.js
 
     constructor(xTile, yTile, color,
                 map, bombs, explosions,
@@ -75,10 +75,10 @@ export default class Enemy {
      * @param {number} dt  ms od posledního volání
      */
     update(dt) {
-        // consume that delay before any other logic
+
         if (this._firstBombDelay > 0) {
             this._firstBombDelay -= dt;
-            // still waiting? skip all bomb logic (but still interpolate / move if you want)
+
             return this._interpolate(dt);
         }
 
@@ -101,16 +101,16 @@ export default class Enemy {
     _computeDangerZones() {
         const danger = new Set();
         for (const bomb of this.bombs) {
-            // Correctly extract bomb center coords (Bomb stores x, y)
+
             const { x: bx, y: by, range = 1 } = bomb;
-            // Add epicenter
+
             danger.add(`${bx},${by}`);
-            // Spread in four directions up to 'range'
+
             for (const {dx,dy} of DIRECTIONS) {
                 for (let r = 1; r <= range; r++) {
                     const nx = bx + dx * r;
                     const ny = by + dy * r;
-                    // Stop if a solid or unbreakable block encountered
+
                     if (!this.map.isWalkable(nx, ny) && this.map.data[ny][nx] !== 2) break;
                     danger.add(`${nx},${ny}`);
                 }
@@ -129,7 +129,7 @@ export default class Enemy {
             nx: this.xTile + dx,
             ny: this.yTile + dy
         })).filter(({nx,ny}) =>
-            // Only keep if walkable, not currently exploding, and not in future danger
+
             this.map.isWalkable(nx, ny) &&
             !this.explosions.some(e => e.xTile === nx && e.yTile === ny) &&
             !danger.has(`${nx},${ny}`)
@@ -137,33 +137,23 @@ export default class Enemy {
     }
 
     _planMovement(dt) {
-        // 1) akumulace času
+        // 1) akumulate cas
         this.moveTimer += dt;
         if (this.moveTimer < MOVE_DELAY) return false;
         this.moveTimer = 0;
         if (this.moving) return true;
 
         if (this._planEvade())      return true;
-        if (this._planAttack())     return true;   // pokud nechceme střílet před chase
-        if (this._planIntercept())  return true;   // cut-off pokud jsme dost blízko
-        if (this._planChase())      return true;   // běžný follow-through
+        if (this._planAttack())     return true;
+        if (this._planIntercept())  return true;
+        if (this._planChase())      return true;
         return this._planWander();
     }
 
-    /**
-     * BFS-based evasion: najde most distant safe tile a vybere první krok.
-     */
-    /**
-     * Simple evasion: vybere sousední tile nejdále od bomby.
-     */
-    /**
-     * Vícekrokové útěkové BFS:
-     * - za cíl bere první dlaždici, jejíž manh.dist od bomby > jejího range
-     * - blokuje jen právě explodující dlaždice (this.explosions)
-     */
+
     _planEvade() {
         if (!this.evading || !this.lastBombTile) return false;
-        // 1) najdi bombu, kterou jsme položili
+        // 1) najdi, bombu co si polozil
         const bomb = this.bombs.find(b => b.x === this.lastBombTile.x && b.y === this.lastBombTile.y);
         if (!bomb) return false;
         const range = bomb.range || 1;
@@ -171,7 +161,7 @@ export default class Enemy {
         const goalCheck = p =>
             Math.abs(p.x - bomb.x) + Math.abs(p.y - bomb.y) > range;
 
-        // 2) vytvoř set aktuálních explozí
+        // 2) vytvor set aktual expl
         const blocked = new Set(this.explosions.map(e => `${e.x},${e.y}`));
 
         // 3) BFS fronta
@@ -202,7 +192,7 @@ export default class Enemy {
             }
         }
 
-        // žádná cesta k bezpečí
+
         return false;
     }
 
@@ -213,8 +203,7 @@ export default class Enemy {
      * BFS-based chase: najde shortest safe path k hráči.
      */
     _planChase() {
-        // pro nahánění bereme celé predikované nebezpečí
-        // 1) sbíráme jen okamžité překážky: exploze + ležící bomby
+
         const blocking = new Set(
             this.explosions.map(e => `${e.x},${e.y}`)
             );
@@ -234,10 +223,7 @@ export default class Enemy {
 
 
 
-    /**
-     * Wander: pokud mám preferredDir a straightSteps, pokračuj;
-     * jinak vyber náhodně z safeDirs.
-     */
+
     _planWander() {
         const safeDirs = this._safeDirections();
         if (!safeDirs.length) return false;
@@ -270,10 +256,10 @@ export default class Enemy {
             this.evadeTimer -= dt;
             if (this.evadeTimer <= 0) {
                 this.evading = false;
-                // keep lastBombTile for explosion waiting
+
             }
         }
-        // If just finished evasion but explosion still present, wait
+
         else if (this.lastBombTile) {
             const stillDanger = this.explosions.some(e =>
                 e.x === this.lastBombTile.x && e.y === this.lastBombTile.y
@@ -282,7 +268,7 @@ export default class Enemy {
             this.lastBombTile = null;
         }
 
-        // If standing on explosion tile, trigger immediate evade
+
         if (!this.evading &&
             this.explosions.some(e => e.x === this.xTile && e.y === this.yTile)) {
             this._evade(this.xTile, this.yTile);
@@ -292,7 +278,6 @@ export default class Enemy {
         return false;
     }
 
-    /** Handle bomb planting logic; return true if action taken */
     _planAttack() {
         if (this.hasActiveBomb || this.evading) return false;
 
@@ -305,7 +290,7 @@ export default class Enemy {
             return true;
         }
 
-        // 2) LOS + vzdálenost ≤ ATTACK_RANGE: jen pokud pak dokážu utéct
+        // 2) LOS + vzdalenost ≤ ATTACK_RANGE: jen pokud pak mzuze utyct
         const dist = Math.abs(this.player.xTile - this.xTile)
             + Math.abs(this.player.yTile - this.yTile);
         if (this._canSeePlayer() && dist <= ATTACK_RANGE) {
@@ -321,35 +306,20 @@ export default class Enemy {
 
 
 
-
-    /**
-     * Testuj, zda po položení bomby na (x,y) s daným range bude aspoň
-     * jedna safe dlaždice (využije _safeDirections(), která zohlední
-     * všechny bomby i explozní predikci).
-     */
-    /**
-     * Vícekroková simulace úniku:
-     * - simuluje přidání bomby (včetně predikce explozí všech bomb)
-     * - BFS hledá cestu k dlaždici s manh.dist > range
-     */
-    /**
-     * Jednoduchá BFS kontrola: existuje cesta k dlaždici
-     * s manh.dist > range, respektujíc pouze map.isWalkable().
-     */
     _canEscapeAfterBomb(x, y, range) {
         const startKey = `${x},${y}`;
         const visited  = new Set([startKey]);
-        // fronta bodů {x,y}
+
         const queue    = [{ x, y }];
 
         while (queue.length) {
             const cur = queue.shift();
-            // pokud jsme už dál než range, máme kam utéct
+
             const md = Math.abs(cur.x - x) + Math.abs(cur.y - y);
             if (md > range) {
                 return true;
             }
-            // expanduj sousedy
+
             for (const {dx, dy} of DIRECTIONS) {
                 const nx = cur.x + dx, ny = cur.y + dy;
                 const key = `${nx},${ny}`;
@@ -370,10 +340,6 @@ export default class Enemy {
 
 
 
-
-    /**
-     * Pokud jsme dost blízko, snažíme se hráče „přestřihnout“.
-     */
     _planIntercept() {
         const px = this.player.xTile, py = this.player.yTile;
         const start = { x: this.xTile, y: this.yTile };
@@ -382,7 +348,7 @@ export default class Enemy {
         for (const b of this.bombs) blocking.add(`${b.x},${b.y}`);
 
         let bestPath = null, bestScore = -Infinity;
-        // kandidáti: samotná hráčova tile + 4 sousedi
+
         const targets = [{ x:px, y:py }];
         for (const {dx,dy} of DIRECTIONS) {
             const tx = px+dx, ty = py+dy;
@@ -410,7 +376,7 @@ export default class Enemy {
 
     /** Convenience to place a bomb and mark state */
     _placeBomb() {
-        // použijeme přímo this.xTile / this.yTile
+
         if (this.hasActiveBomb) return;
         if (this.bombs.some(b => b.x===this.xTile && b.y===this.yTile && b.active))
             return;
@@ -436,10 +402,10 @@ export default class Enemy {
         this.evading = true;
         this.evadeTimer = 1000;
         this.lastBombTile = { x: bombX, y: bombY };
-        // next update will plan the first escape move
+        // dalsi update naplnje move
     }
 
-    // ... placeholder for _planAttack, _planMovement, _interpolate ...
+
     /**
      * Handles pixel interpolation and animation frame update
      */
@@ -456,7 +422,7 @@ export default class Enemy {
         if (this.y < this.targetY) this.y = Math.min(this.y + step, this.targetY);
         else if (this.y > this.targetY) this.y = Math.max(this.y - step, this.targetY);
 
-        // Update animation frame based on progress
+
         const prog = Math.abs(
             (this.dir === 'left' || this.dir === 'right')
                 ? (this.x - this.startX) / this.tileSize
@@ -467,7 +433,7 @@ export default class Enemy {
             FRAMES_PER_DIR[this.dir] - 1
         );
 
-        // Finish movement when target reached
+
         if (this.x === this.targetX && this.y === this.targetY) {
             this.moving = false;
             this.frame  = 0;
@@ -489,7 +455,7 @@ export default class Enemy {
     }
 
 
-    // ... placeholders for _planAttack, _planMovement ...
+
 
     /**
      * Prepare interpolation: set new tile position and pixel targets
@@ -577,11 +543,7 @@ export default class Enemy {
 
 }
 
-/**
- * Najde shortest path z `start` do `target` přes průchozí dlaždice,
- * vynechává pole v `blockingSet` (Set klíčů "x,y").
- * Vrací pole bodů [{x,y,dir},…] nebo null.
- */
+
 function bfsFindPath(start, target, map, blockingSet) {
     const key = p => `${p.x},${p.y}`;
     const visited = new Set([key(start)]);

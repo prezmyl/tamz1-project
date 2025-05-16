@@ -1,4 +1,4 @@
-// game.js
+
 
 import LevelManager from './js/LevelManager.js';
 import Bomb         from './js/Bomb.js';
@@ -12,10 +12,10 @@ import Score        from './js/Score.js';
 // ——————————————————————————————————————————————————
 export function showMenu(name) {
 
-    // nejprve ukaž celý overlay (aby v něm bylo co zobrazit)
+
     document.getElementById('menu-container')
         .classList.remove('hidden');
-    // pauza hlavního loopu
+
     if (LM) LM.gameOver = true;
 
     ['main','gameover','victory'].forEach(id => {
@@ -102,7 +102,7 @@ function bindMenuButtons() {
     });
 }
 
-// zavěsíme vazby až po načtení DOM
+
 window.addEventListener('DOMContentLoaded', bindMenuButtons);
 
 // ——————————————————————————————————————————————————

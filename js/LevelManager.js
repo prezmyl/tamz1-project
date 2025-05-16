@@ -31,27 +31,27 @@ export default class LevelManager {
     // LevelManager.js
 
     draw() {
-        // figure out which 640×480 chunk to slice from fieldsImg
+
         const sx = this.FIELD_BORDER + this.bgCol * (this.FIELD_W + this.FIELD_BORDER);
         const sy = this.FIELD_BORDER
             + this.TOP_BORDER_Y
             + this.bgRow * (this.FIELD_H + this.FIELD_BORDER + this.TOP_BORDER_Y);
 
-        // how big is our logical map in pixels?
+
         const mapW = this.map.cols * this.map.tileSize;
         const mapH = this.map.rows * this.map.tileSize;
 
-        // where on screen do we draw it?
+
         const dx = this.offsetX;
         const dy = this.offsetY;
 
-        // 1) draw *only* that map‐sized background region
+
         this.ctx.drawImage(
             this.fieldsImg,
-            sx, sy,                 // source x,y
-            this.FIELD_W, this.FIELD_H,  // source w,h
-            dx, dy,                 // dest x,y
-            mapW, mapH              // dest w,h
+            sx, sy,
+            this.FIELD_W, this.FIELD_H,
+            dx, dy,
+            mapW, mapH
         );
 
 
@@ -96,7 +96,7 @@ export default class LevelManager {
     }
 
     endGame(victory) {
-        // nejdřív ulož skóre
+
         if (victory) {
             Score.saveHighScores({ name:'You', value: this.score.value });
             refreshHighscoreList();

@@ -25,7 +25,7 @@ export default class Bomb {
 
         this.bornAt     = performance.now();
         this.timer      = timer;
-        // instead of a plain circle we now delegate to a BombAnimation
+
         this.anim       = new BombAnimation(
             xTile, yTile,
             Enemy.sheet,    // loaded sprite‐sheet
@@ -42,13 +42,12 @@ export default class Bomb {
     }
 
     update(dt, now) {
-        // nothing else here for now, but you could decrement a fuse‐sound timer, etc.
-        // keep the alive‐flag logic as is (setTimeout → explode())
+
+
     }
 
     draw(ctx, tileSize, now) {
         if (!this.active) return;
-        // draw the countdown sprite
         this.anim.draw(ctx, now);
     }
 
@@ -63,8 +62,8 @@ export default class Bomb {
         ];
         for (const {dx,dy} of dirs) {
             const tx = this.x + dx, ty = this.y + dy;
-            if (this.map.data[ty][tx] !== 1) {      // 1 = pevná zeď → tam nic nekreslíme
-                this.map.destroyTile(tx, ty);         // zničitelná cihla
+            if (this.map.data[ty][tx] !== 1) {
+                this.map.destroyTile(tx, ty);
                 this.explosionTiles.push(
                     new Explosion(tx, ty, Enemy.sheet, this.map.tileSize, performance.now(), this.hueRotation)
                 );
@@ -76,7 +75,6 @@ export default class Bomb {
 
     static place(owner, map, bombs, explosionTiles, timer) {
         const ts = owner.tileSize;
-        // vezmeme střed hráče/enemy a přepočteme na tile
         const xTile = Math.floor((owner.x + ts/2) / ts);
         const yTile = Math.floor((owner.y + ts/2) / ts);
         if (owner.hasActiveBomb) return;

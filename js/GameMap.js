@@ -8,13 +8,13 @@ export default class GameMap {
         this.bombs       = bombs;
         this.tilesImg    = tilesImg;
 
-        // layout parameters (from your measurement)
+
         this.TOP_BORDER  =   9;
         this.GRID_LINE   =   4;
         this.CELL_W      =  40;
         this.CELL_H      =  36;
 
-        // precompute source‐rects for the three basic tiles:
+
         const T = ({r,c}) => ({
             sx: this.GRID_LINE  + c * (this.CELL_W + this.GRID_LINE),
             sy: this.TOP_BORDER  + r * (this.CELL_H + this.GRID_LINE),
@@ -32,22 +32,22 @@ export default class GameMap {
         let c = 1;
         while (true) {
             const sx = this.TOP_BORDER + c*(this.CELL_W+this.GRID_LINE);
-            // bail if we ran off the sheet
+
             if (sx + this.CELL_W > this.tilesImg.width) break;
             this.breakFrames.push({ sx, sy: this.tileSrc[2].sy, w:this.CELL_W, h:this.CELL_H });
             c++;
         }
 
-        // slot for any active break‐animations:
+
         this._breaking = []; // { xTile, yTile, startedAt }
     }
 
     /** call this *instead* of instantly clearing data[y][x] */
     destroyTile(x,y) {
         if (this.data[y][x] !== 2) return;
-        // start the animation
+
         this._breaking.push({ x,y, startedAt: performance.now() });
-        // leave data[y][x] = 2 until the anim finishes
+
     }
 
     draw(ctx) {
@@ -56,8 +56,8 @@ export default class GameMap {
         for (let y=0; y<this.rows; y++) {
             for (let x=0; x<this.cols; x++) {
                 const t = this.data[y][x];
-                // floor (0) we skip and let background show
-                if (t === 0) continue;  //if not bg pic is presented -> delete
+
+                if (t === 0) continue;
 
                 const src = this.tileSrc[t];
                 ctx.drawImage(
@@ -80,7 +80,7 @@ export default class GameMap {
             const pct     = elapsed / DURATION;
 
             if (pct >= 1) {
-                // done: flip the tile to empty
+
                 this.data[b.y][b.x] = 0;
                 this._breaking.splice(i,1);
                 continue;
@@ -102,7 +102,7 @@ export default class GameMap {
     }
 
     isWalkable(x,y) {
-        // unchanged from yours
+
         if (this.data[y][x] === 1 || this.data[y][x] === 2) return false;
         if (this.bombs.some(b => b.x===x&&b.y===y&&b.active))    return false;
         return true;
